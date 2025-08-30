@@ -1,0 +1,146 @@
+/* Checkbox  Styling */
+.tmc-checkbox-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.tmc-checkbox-wrapper .background {
+    fill: #aaa;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.tmc-checkbox-wrapper .ring {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 2.5px;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.tmc-checkbox-wrapper .stroke {
+    fill: none;
+    stroke: #fff;
+    stroke-miterlimit: 10;
+    stroke-width: 2.5px; /* ✅ Updated */
+    stroke-dashoffset: 100;
+    stroke-dasharray: 100;
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.tmc-checkbox-wrapper .check {
+    fill: none;
+    stroke: #fff;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5px; /* ✅ Matches ring */
+    stroke-dashoffset: 22;
+    stroke-dasharray: 22;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    transition-delay: 0.15s;
+}
+
+.tmc-checkbox-wrapper .hover-tick {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.8);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2px;
+    stroke-dashoffset: 22;
+    stroke-dasharray: 22;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* Unchecked state */
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .background {
+    fill: #aaa;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .stroke {
+    stroke-dashoffset: 100;
+    stroke: #aaa;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .check {
+    stroke-dashoffset: 22;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .ring {
+    opacity: 1;
+}
+
+/* Hover effect */
+.tmc-checkbox-wrapper:hover input[type="checkbox"]:not(:checked) + svg .hover-tick {
+    stroke-dashoffset: 0;
+    opacity: 1;
+}
+
+.tmc-checkbox-wrapper:hover input[type="checkbox"]:not(:checked) + svg .background {
+    fill: #999;
+}
+
+/* Checked state */
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .stroke {
+    stroke-dashoffset: 0;
+    stroke: #fff;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .check {
+    stroke-dashoffset: 0;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .background {
+    fill: #4caf50;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .hover-tick {
+    opacity: 0;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .ring {
+    opacity: 0;
+}
+
+/* Focus */
+.tmc-checkbox-wrapper input[type="checkbox"]:focus-visible + svg {
+    outline: 2px solid #ff7043;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+/* Active effect */
+.tmc-checkbox-wrapper input[type="checkbox"]:active + svg {
+    transform: scale(0.95);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg {
+    animation: pulse 0.4s ease;
+}

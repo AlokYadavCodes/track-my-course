@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-M" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="popup.css" />
+        <title>TrackMyCourse</title>
+    </head>
+    <body>
+        <div class="wrapper">
+            <header>
+                <img src="../../icons/logo_24.png" alt="TrackMyCourse Logo" />
+                <h1>TrackMyCourse</h1>
+            </header>
+            <main>
+                <div id="welcome-message">
+                    <h2>Welcome to TrackMyCourse!</h2>
+                    <p>
+                        To get started, go to a YouTube playlist and look for
+                        the 'Start Course' button.
+                    </p>
+                </div>
+
+                <div id="course-lists-container">
+                    <div class="courses-outer-container">
+                        <div class="courses-summary in-progress-summary">
+                            <div class="summary-text">
+                                In progress
+                                <span
+                                    class="in-progress-course-count course-count"
+                                ></span>
+                            </div>
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path
+                                    d="M18 15L12 9L6 15"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </div>
+                        <div class="in-progress-courses courses"></div>
+                    </div>
+
+                    <div class="courses-outer-container">
+                        <div class="courses-summary completed-summary">
+                            <div class="summary-text">
+                                Completed
+                                <span
+                                    class="completed-course-count course-count"
+                                ></span>
+                            </div>
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path
+                                    d="M6 9L12 15L18 9"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </div>
+                        <div class="completed-courses courses hide"></div>
+                    </div>
+                </div>
+            </main>
+            <footer class="popup-footer">
+                <a
+                    href="https://trackmycourse.online/donate"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="footer-link"
+                    >Donate</a
+                >
+                <a
+                    href="https://forms.gle/dJxwbGj8d3mwGs8b6"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="footer-link"
+                    >Request Feature</a
+                >
+                <a
+                    href="https://forms.gle/J7fasJUVoQG7o62d8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="footer-link"
+                    >Report Bugs</a
+                >
+            </footer>
+        </div>
+        <script src="popup.js"></script>
+    </body>
+</html>

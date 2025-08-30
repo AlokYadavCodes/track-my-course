@@ -1,0 +1,385 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-primary: #f9fafb;
+    --bg-secondary: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-primary: #e5e7eb;
+    --border-hover: #d1d5db;
+    --progress-track: #e5e7eb;
+    --progress-fill: #3b82f6;
+    --delete-bg: #fee2e2;
+    --delete-bg-hover: #fecaca;
+    --delete-text: #b91c1c;
+    --delete-icon-bg-hover: #f3f4f6;
+    --scroll-background: #e5e7eb;
+    --scroll-thumb-color: #3b83f6c5;
+    --scroll-hover: #e0e0e0c0;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #111827;
+        --bg-secondary: #1f2937;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-primary: #374151;
+        --border-hover: #4b5563;
+        --progress-track: #374151;
+        --progress-fill: #60a5fa;
+        --delete-bg: #450a0a;
+        --delete-bg-hover: #571111;
+        --delete-text: #fecaca;
+        --delete-icon-bg-hover: #374151;
+        --scroll-background: #676e79;
+        --scroll-thumb-color: #3b83f673;
+        --scroll-hover: #596069;
+    }
+}
+html {
+    scrollbar-gutter: stable;
+}
+
+html::-webkit-scrollbar,
+.courses::-webkit-scrollbar {
+    width: 4px;
+    background-color: transparent;
+    border-left: 1px solid var(--border-primary);
+}
+.courses::-webkit-scrollbar {
+    width: 2px;
+}
+
+html::-webkit-scrollbar-thumb,
+.courses::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb-color);
+    border-radius: 0.25rem;
+}
+html::-webkit-scrollbar-thumb:hover,
+.courses::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-hover);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    width: 25rem;
+    min-height: 25rem;
+    max-height: 37.5rem;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-primary);
+    background-color: var(--bg-primary);
+}
+
+header h1 {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+header img {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.course {
+    position: relative;
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border: 1px solid var(--border-primary);
+    transition: border-color 0.2s ease-in-out, height 0.3s ease,
+        padding 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
+    overflow: hidden;
+}
+
+.course:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.course-content {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    width: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.course-img {
+    width: 6.25rem;
+    height: 3.5rem;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+    background-color: var(--border-primary);
+}
+
+.course-img img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+}
+
+.course-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.course-info h3 {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 1.125rem;
+}
+
+.summary-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.course-count {
+    background-color: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 1.125rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 0.25rem;
+}
+
+.completion {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.375rem;
+}
+
+.progress-bar {
+    background-color: var(--progress-track);
+    border-radius: 0.25rem;
+    height: 0.375rem;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 0.25rem;
+    background-color: var(--progress-fill);
+    transition: width 0.4s ease;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.course:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    background-color: var(--delete-icon-bg-hover);
+}
+
+.delete-confirmation {
+    position: absolute;
+    inset: 0;
+    background-color: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+
+.delete-confirmation p {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.delete-confirmation-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.delete-confirmation-actions button {
+    border: none;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.confirm-delete-btn {
+    background-color: var(--delete-bg);
+    color: var(--delete-text);
+}
+.confirm-delete-btn:hover {
+    background-color: var(--delete-bg-hover);
+}
+
+.cancel-delete-btn {
+    background-color: var(--border-primary);
+    color: var(--text-primary);
+}
+.cancel-delete-btn:hover {
+    background-color: var(--border-hover);
+}
+
+.course.deleting .course-content {
+    opacity: 0;
+    pointer-events: none;
+}
+.course.deleting .delete-confirmation {
+    opacity: 1;
+    visibility: visible;
+}
+
+.course.fading-out {
+    opacity: 0;
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: -0.5rem;
+    border-width: 0;
+}
+
+.courses-outer-container {
+    background-color: var(--bg-secondary);
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-primary);
+    user-select: none;
+}
+
+.courses-summary {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.courses {
+    padding: 0.25rem 0.5rem;
+    max-height: 25rem;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, padding-top 0.3s ease,
+        padding-bottom 0.3s ease;
+}
+.courses.hide {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+.rotate {
+    transform: rotate(180deg);
+}
+.courses-summary svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    transition: transform 0.2s ease;
+}
+
+.no-course-message {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+.hidden {
+    display: none;
+}
+
+#welcome-message {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+#welcome-message h2 {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+}
+
+#welcome-message p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-size: 0.875rem;
+}
+
+/* Footer */
+.popup-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-around; 
+    padding: 4px 0;
+    border-top: 1px solid var(--border-primary);
+    font-size: 13px;
+    background-color: var(--bg-primary);
+}
+
+.footer-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    opacity: 85%;
+    text-decoration: underline;
+}

@@ -1,0 +1,288 @@
+:root {
+    --text-primary: #0f0f0f;
+    --start-button-text: #fff;
+    --start-button-bg: #0f0f0f;
+    --start-button-hover-bg: #444444;
+    --start-button-disabled-bg: #444444;
+    --start-button-disabled-text: #ffffffee;
+
+    --tooltip-bg: #fff;
+    --tooltip-border: #ccc;
+    --tooltip-text: #333;
+    --tooltip-shadow: #ccc;
+
+    --progress-bar-bg: #c0c0c0;
+    --progress-bar-color: green;
+    --completed-videos-bg: #eee;
+
+    --delete-btn-hover-bg: rgba(0, 0, 0, 0.05);
+    --delete-btn-border: rgba(0, 0, 0, 0.1);
+    --delete-popup-bg: rgba(11, 11, 11, 0.37);
+    --delete-popup-border: rgba(0, 0, 0, 0.1);
+    --delete-popup-shadow: rgba(0, 0, 0, 0.1);
+    --delete-popup-text: #f1f1f1;
+    --confirm-delete-bg: #eee;
+    --confirm-delete-text: #0f0f0f;
+    --cancel-delete-bg: #0f0f0f;
+    --cancel-delete-text: #f1f1f1;
+    --popup-button-border: #88888833,
+}
+
+html[dark] {
+    --text-primary: #fff;
+    --start-button-text: #0f0f0f;
+    --start-button-bg: #f1f1f1;
+    --start-button-hover-bg: #d9d9d9;
+    --start-button-disabled-bg: #d9d9d9;
+    --start-button-disabled-text: #0f0f0fee;
+
+    --tooltip-bg: #272727;
+    --tooltip-border: #ccc;
+    --tooltip-text: #f1f1f1;
+    --tooltip-shadow: #666;
+
+    --progress-bar-bg: #eee;
+    --progress-bar-color: #009000;
+    --completed-videos-bg: #ffffff1a;
+
+    --delete-btn-hover-bg: rgba(255, 255, 255, 0.1);
+    --delete-btn-border: rgba(255, 255, 255, 0.2);
+    --delete-popup-bg: rgba(11, 11, 11, 0.37);
+    --delete-popup-border: rgba(255, 255, 255, 0.2);
+    --delete-popup-shadow: rgba(0, 0, 0, 0.1);
+    --delete-popup-text: #f1f1f1;
+    --confirm-delete-bg: #4a4a4a;
+    --confirm-delete-text: #f1f1f1;
+    --cancel-delete-bg: #f1f1f1;
+    --cancel-delete-text: #0f0f0f;
+    --popup-button-border: #cccccc33,
+
+}
+
+.tmc-wp-start-course-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 28px;
+    min-width: fit-content;
+    white-space: nowrap;
+    color: var(--start-button-text);
+    background-color: var(--start-button-bg);
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 18px;
+    text-align: center;
+    cursor: pointer;
+    font-family: "Roboto", "Arial", sans-serif;
+}
+.tmc-wp-start-course-btn:disabled {
+    cursor: not-allowed;
+    background-color: var(--start-button-disabled-bg);
+    color: var(--start-button-disabled-text);
+}
+.tmc-wp-start-course-btn:hover {
+    background-color: var(--start-button-hover-bg);
+}
+.disabled-btn-container {
+    position: relative;
+}
+.disabled-btn-container .tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--tooltip-bg);
+    border: 1px solid var(--tooltip-border);
+    border-radius: 8px;
+    padding: 10px;
+    width: 190px;
+    box-shadow: 2px 2px 4px var(--tooltip-shadow);
+    z-index: 10;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Roboto", "Arial", sans-serif;
+    line-height: 18px;
+    color: var(--tooltip-text);
+}
+.disabled-btn-container .tooltip::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: transparent;
+}
+.disabled-btn-container:hover .tooltip {
+    display: block;
+}
+.disabled-btn-container button:focus + .tooltip {
+    display: block;
+}
+.disabled-btn-container .tooltip a {
+    text-decoration: underline;
+    color: inherit;
+}
+
+.tmc-wp-checkbox-wrapper {
+    width: 32px;
+    height: 32px;
+}
+/* youtube elements styling */
+#header-top-row #header-description h3.style-scope.ytd-playlist-panel-renderer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#menu.style-scope.ytd-playlist-panel-video-renderer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row-reverse;
+}
+
+/* progress div styling */
+.tmc-wp-progress-div{
+    position: relative;
+}
+.tmc-wp-progress-div .progress-content-wrapper {
+    height: 100%;
+    width: 100%;
+    color: var(--text-primary);
+    margin: 8px 0;
+    position: relative;
+}
+
+.tmc-wp-progress-div .progress-bar-outer-container {
+    padding: 0 12px 0 2px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 8px;
+}
+.tmc-wp-progress-div .progress-bar-container {
+    width: 100%;
+    height: 100%;
+    background-color: var(--progress-bar-bg);
+}
+.tmc-wp-progress-div #progress-bar {
+    height: 100%;
+    background-color: var(--progress-bar-color);
+}
+.tmc-wp-progress-div .time-container {
+    display: flex;
+    padding: 0 16px 0 6px;
+    font-size: 12px;
+    justify-content: space-between;
+    align-items: center;
+}
+.tmc-wp-progress-div .completed-in {
+    margin: 8px 10px 8px 0;
+    text-align: center;
+    font-size: 14px;
+}
+
+.tmc-wp-progress-div .completed-videos {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    height: 20px;
+    width: fit-content;
+    background-color: var(--completed-videos-bg);
+    gap: 4px;
+    position: relative;
+    bottom: 4px;
+    border-radius: 4px;
+    padding: 0px 8px;
+}
+.tmc-wp-progress-div .tmc-delete-btn {
+    border-radius: 8px 0px 8px 0;
+    border-width: 1px 0px 0px 1px;
+    border-style: solid;
+    border-color: var(--delete-btn-border);
+    position: absolute;
+    bottom: -8px;
+    right: -8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+}
+.tmc-wp-progress-div .tmc-delete-btn:hover {
+    background-color: var(--delete-btn-hover-bg);
+    cursor: pointer;
+}
+
+.tmc-wp-progress-div .tmc-delete-popup {
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 10px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    border: 1px solid var(--delete-popup-border);
+    border-width: 1px 0 1px 0;
+    width: calc(100% + 22px);
+    border-radius: 0;
+    margin-left: -16px;
+    margin-top: -4px;
+    height: 64px;
+    color: var(--text-primary);
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.tmc-progress-div.deleting .tmc-delete-popup {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.tmc-progress-div.deleting .progress-content-wrapper {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tmc-wp-progress-div .tmc-delete-popup p {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+}
+.tmc-wp-progress-div .tmc-delete-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+.tmc-wp-progress-div .tmc-delete-buttons button {
+    padding: 4px 14px;
+    border: 1px solid var(--popup-button-border);
+    border-radius: 14px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+.tmc-wp-progress-div .tmc-delete-buttons button:hover {
+    opacity: 0.80;
+}
+.tmc-wp-progress-div .tmc-confirm-delete {
+    background-color: var(--confirm-delete-bg);
+    color: var(--confirm-delete-text);
+}
+.tmc-wp-progress-div .tmc-cancel-delete {
+    background-color: var(--cancel-delete-bg);
+    color: var(--cancel-delete-text);
+}
+

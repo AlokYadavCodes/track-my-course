@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "TrackMyCourse - Track YouTube Playlists",
+    "short_name": "TrackCourse",
+    "version": "1.0.0",
+    "description": "Turn YouTube playlists into structured, trackable courses with progress bars and checkboxes.",
+    "icons": {
+        "16": "icons/logo_16.png",
+        "24": "icons/logo_24.png",
+        "32": "icons/logo_32.png",
+        "48": "icons/logo_48.png",
+        "128": "icons/logo_128.png"
+    },
+    "permissions": ["storage", "webNavigation"],
+    "host_permissions": ["https://www.youtube.com/*"],
+    "background": {
+        "service_worker": "src/background/background.js"
+    },
+    "action": {
+        "default_popup": "src/popup/popup.html",
+        "default_icon": {
+            "16": "icons/logo_16.png",
+            "24": "icons/logo_24.png",
+            "32": "icons/logo_32.png",
+            "48": "icons/logo_48.png",
+            "128": "icons/logo_128.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "js": ["src/content/content_script.js"],
+            "css": [
+                "src/styles/checkbox.css",
+                "src/styles/playlistPage.css",
+                "src/styles/playlistWatchPage.css"
+            ],
+            "matches": ["https://www.youtube.com/*"]
+        }
+    ]
+}
