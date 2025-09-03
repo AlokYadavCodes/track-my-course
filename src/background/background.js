@@ -1,10 +1,7 @@
 function sendMessage(tabId, message) {
     chrome.tabs.sendMessage(tabId, message, () => {
         if (chrome.runtime.lastError) {
-            console.log(
-                "Failed to send message to content script:",
-                chrome.runtime.lastError
-            );
+            // ignore
         }
     });
 }

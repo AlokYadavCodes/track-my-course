@@ -1,6 +1,3 @@
-console.log(
-    "=================================CONTENT SCRIPT FIRST LOAD SUCCESS================================="
-);
 const SELECTORS = {
     ytNavigationProgress: "yt-page-navigation-progress",
     videoDuration: ".yt-badge-shape__text",
@@ -41,6 +38,8 @@ const SELECTORS = {
         },
     },
 };
+
+// --- STATE MANAGEMENT ---
 const state = {
     playlistId: null,
     videoWatchStatus: {},
@@ -65,195 +64,6 @@ const PAGE_TYPE = {
     PLAYLIST: "playlist",
 };
 
-// Runs once when the script first loads
-const currentURL = window.location.href;
-if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
-    state.currentPage = PAGE_TYPE.WATCH;
-} else if (currentURL.includes("playlist?list=")) {
-    state.currentPage = PAGE_TYPE.PLAYLIST;
-} else {
-    state.currentPage = null;
-}
-handleFullPageUpdate();
-
-// Runs whenever there is a navigation (background script sends message and it acts accordingly)
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    console.log("Message received in content script:", request);
-    if (
-        !(request.action === "updateWatchPage") &&
-        state.investedTimeTrackerCleanup
-    ) {
-        state.investedTimeTrackerCleanup();
-    }
-
-    if (request.action === "updateWatchPage") {
-        console.log("----CALLING UPDATE WATCH PAGE -- NAVIGATION---- ");
-        const isNewPlaylist =
-            !(state.currentPage === PAGE_TYPE.WATCH) ||
-            state.playlistId !== request.playlistId;
-
-        await waitForNavigation();
-        if (isNewPlaylist) {
-            console.log("calling full page update");
-            await handleFullPageUpdate(PAGE_TYPE.WATCH);
-        } else {
-            // this happens when video is changed on the same playlist
-            // youtube changes content in the same html structure which removes checkboxes. Hence again adding it.
-            await handlePartialUpdate();
-        }
-        state.currentPage = PAGE_TYPE.WATCH;
-    } else if (request.action === "updatePlaylistPage") {
-        console.log("-----CALLING UPDATE PLAYLIST PAGE -- NAVIGATION----- ");
-        const isNewPlaylist =
-            !(state.currentPage === PAGE_TYPE.PLAYLIST) ||
-            state.playlistId !== request.playlistId;
-
-        if (isNewPlaylist) {
-            await waitForNavigation();
-            await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
-        }
-        state.currentPage = PAGE_TYPE.PLAYLIST;
-    }
-    return true;
-});
-
-chrome.storage.onChanged.addListener((changes, areaName) => {
-    console.log("inside storage changed:");
-    if (areaName !== "local") return;
-    const changedPlaylistId = Object.keys(changes)[0];
-    if (changedPlaylistId !== state.playlistId) return;
-
-    const currentURL = window.location.href;
-
-    if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
-        state.currentPage = PAGE_TYPE.WATCH;
-    } else if (currentURL.includes("playlist?list=")) {
-        state.currentPage = PAGE_TYPE.PLAYLIST;
-    } else {
-        state.currentPage = null;
-    }
-
-    const change = changes[changedPlaylistId];
-    if (!change.oldValue || !change.newValue) {
-        // course started or deleted
-        handleFullPageUpdate();
-    } else {
-        // some updation in existing course
-        refreshUI();
-    }
-});
-
-// Handles a full page update: aborts old tasks, cleans the UI, and calls the main update function for the given page type.
-async function handleFullPageUpdate(pageType = state.currentPage) {
-    try {
-        if (state.activePageUpdateController) {
-            state.activePageUpdateController.abort();
-        }
-        state.activePageUpdateController = new AbortController();
-        const { signal } = state.activePageUpdateController;
-
-        performCleanUp();
-
-        // Decide which update function to call based on the page type.
-        const updateFunction =
-            pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
-        await updateFunction({ signal });
-    } catch (err) {
-        if (err.name !== "AbortError") {
-            console.log(`Error during full update of ${pageType} page:`, err);
-        }
-    }
-}
-
-// Handles a partial update on the Watch Page when navigating within the same playlist. Only re-renders the video checkboxes if it is an enrolled course.
-async function handlePartialUpdate() {
-    try {
-        const isEnrolledCourse = Object.keys(state.videoWatchStatus).length > 0;
-        if (!isEnrolledCourse) {
-            console.log("Not an enrolled course, skipping partial update.");
-            return;
-        }
-
-        if (state.activePageUpdateController) {
-            state.activePageUpdateController.abort();
-        }
-        state.activePageUpdateController = new AbortController();
-        const { signal } = state.activePageUpdateController;
-
-        removeVideoCheckboxes();
-        await renderWPVideoCheckboxes({ signal });
-    } catch (err) {
-        if (err.name !== "AbortError") {
-            console.log("Error during partial update:", err);
-        }
-    }
-}
-
-async function refreshUI() {
-    if (state.activePageUpdateController) {
-        state.activePageUpdateController.abort();
-    }
-    state.activePageUpdateController = new AbortController();
-    const { signal } = state.activePageUpdateController;
-
-    try {
-        await updateStateVariables({ signal });
-
-        if (state.currentPage === PAGE_TYPE.WATCH) {
-            refreshWatchPageUI({ signal });
-        } else if (state.currentPage === PAGE_TYPE.PLAYLIST) {
-            refreshPlaylistPageUI({ signal });
-        }
-    } catch (err) {
-        if (err.name !== "AbortError") {
-            console.log("Failed to refresh UI:", err);
-        }
-    }
-}
-
-function refreshWatchPageUI({ signal }) {
-    const progressDiv = document.querySelector(".tmc-wp-progress-div");
-    if (!progressDiv) return; // Exit if the UI isn't rendered
-
-    // Update time displays
-    progressDiv.querySelector(
-        "#watched-time"
-    ).textContent = `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
-    progressDiv.querySelector(
-        "#total-time"
-    ).textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
-    progressDiv.querySelector(
-        "#invested-time"
-    ).textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
-
-    if (signal.aborted) return;
-    progressDiv.querySelector("#watched-videos-count").textContent =
-        Object.values(state.videoWatchStatus).filter(Boolean).length;
-    progressDiv.querySelector("#total-videos-count").textContent = Object.keys(
-        state.videoWatchStatus
-    ).length;
-
-    const percentage = calculateCompletionPercentage();
-    progressDiv.querySelector("#completed-percentage").textContent = percentage;
-    progressDiv.querySelector("#progress-bar").style.width = `${percentage}%`;
-
-    if (signal.aborted) return;
-
-    updateVideoCheckboxes(PAGE_TYPE.WATCH);
-}
-
-function refreshPlaylistPageUI({ signal }) {
-    const progressDiv = document.querySelector(".tmc-pp-progress-div");
-    if (!progressDiv) return;
-
-    if (signal.aborted) return;
-    progressDiv.querySelector(".tmc-watched-text").textContent = `${
-        Object.values(state.videoWatchStatus).filter(Boolean).length
-    } / ${Object.keys(state.videoWatchStatus).length} watched`;
-
-    updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
-}
-
 async function updateStateVariables({ signal }) {
     if (signal.aborted) throw createAbortError();
     state.playlistId = getPlaylistId(window.location.href);
@@ -272,6 +82,67 @@ async function updateStateVariables({ signal }) {
     state.investedTime = storageData.investedTime ?? { ...defaultDuration };
     state.courseImgSrc = storageData.courseImgSrc ?? null;
     state.courseName = storageData.courseName ?? null;
+}
+
+// ---- Runs once when the script first loads ---
+const currentURL = window.location.href;
+if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
+    state.currentPage = PAGE_TYPE.WATCH;
+} else if (currentURL.includes("playlist?list=")) {
+    state.currentPage = PAGE_TYPE.PLAYLIST;
+} else {
+    state.currentPage = null;
+}
+handleFullPageUpdate();
+
+// --- EVENT HANDLING & PAGE UPDATES ---
+
+// Handles a full page update: aborts old tasks, cleans the UI, and calls the main update function for the given page type.
+async function handleFullPageUpdate(pageType = state.currentPage) {
+    try {
+        if (state.activePageUpdateController) {
+            state.activePageUpdateController.abort();
+        }
+        state.activePageUpdateController = new AbortController();
+        const { signal } = state.activePageUpdateController;
+
+        performCleanUp();
+
+        // Decide which update function to call based on the page type.
+        const updateFunction =
+            pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
+        await updateFunction({ signal });
+    } catch (err) {
+        if (err.name !== "AbortError") {
+            console.error(
+                `Unexpected error during full update of ${pageType} page:`,
+                err
+            );
+        }
+    }
+}
+
+// Handles a partial update on the Watch Page when navigating within the same playlist. Only re-renders the video checkboxes if it is an enrolled course.
+async function handlePartialUpdate() {
+    try {
+        const isEnrolledCourse = Object.keys(state.videoWatchStatus).length > 0;
+        if (!isEnrolledCourse) {
+            return;
+        }
+
+        if (state.activePageUpdateController) {
+            state.activePageUpdateController.abort();
+        }
+        state.activePageUpdateController = new AbortController();
+        const { signal } = state.activePageUpdateController;
+
+        removeVideoCheckboxes();
+        await renderWPVideoCheckboxes({ signal });
+    } catch (err) {
+        if (err.name !== "AbortError") {
+            console.error("Unexpected error during partial update:", err);
+        }
+    }
 }
 
 async function updateWatchPage({ signal }) {
@@ -336,9 +207,71 @@ async function updatePlaylistPage({ signal }) {
     await updatePlaylistPageLayout(state.mediaQuery);
 }
 
+// Runs whenever there is a navigation (background script sends message and it acts accordingly)
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+    if (
+        !(request.action === "updateWatchPage") &&
+        state.investedTimeTrackerCleanup
+    ) {
+        state.investedTimeTrackerCleanup();
+    }
+
+    if (request.action === "updateWatchPage") {
+        const isNewPlaylist =
+            !(state.currentPage === PAGE_TYPE.WATCH) ||
+            state.playlistId !== request.playlistId;
+
+        await waitForNavigation();
+        if (isNewPlaylist) {
+            await handleFullPageUpdate(PAGE_TYPE.WATCH);
+        } else {
+            // this happens when video is changed on the same playlist
+            // youtube changes content in the same html structure which removes checkboxes. Hence again adding it.
+            await handlePartialUpdate();
+        }
+        state.currentPage = PAGE_TYPE.WATCH;
+    } else if (request.action === "updatePlaylistPage") {
+        const isNewPlaylist =
+            !(state.currentPage === PAGE_TYPE.PLAYLIST) ||
+            state.playlistId !== request.playlistId;
+
+        if (isNewPlaylist) {
+            await waitForNavigation();
+            await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
+        }
+        state.currentPage = PAGE_TYPE.PLAYLIST;
+    }
+    return true;
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== "local") return;
+    const changedPlaylistId = Object.keys(changes)[0];
+    if (changedPlaylistId !== state.playlistId) return;
+
+    const currentURL = window.location.href;
+
+    if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
+        state.currentPage = PAGE_TYPE.WATCH;
+    } else if (currentURL.includes("playlist?list=")) {
+        state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else {
+        state.currentPage = null;
+    }
+
+    const change = changes[changedPlaylistId];
+    if (!change.oldValue || !change.newValue) {
+        // course started or deleted
+        handleFullPageUpdate();
+    } else {
+        // some updation in existing course
+        refreshUI();
+    }
+});
+
+// --- UI RENDERING AND MANIPULATION FUNCTIONS ---
 async function renderWPStartCourseBtn({ signal }) {
     if (signal.aborted) throw createAbortError();
-    console.log("------rendering watch page start button-------");
 
     const menu = await waitForElement({
         selector: SELECTORS.watchPage.playlistMenu,
@@ -349,7 +282,6 @@ async function renderWPStartCourseBtn({ signal }) {
         selector: SELECTORS.watchPage.playlistItems,
         signal,
     });
-    const playlistVideos = playlistItems.children; // always updated live (due to .children)
 
     const startCourseBtn = document.createElement("button");
     startCourseBtn.textContent = "Start Course";
@@ -383,13 +315,13 @@ async function renderWPStartCourseBtn({ signal }) {
             setToStorage();
         } catch (err) {
             if (err.name !== "AbortError") {
-                console.log("Failed to start course:", err);
+                console.error("Unexpected error during starting course:", err);
             }
         }
     });
 }
+
 async function renderPPStartCourseBtn({ signal }) {
-    console.log("inside render pp start course btn");
     if (signal.aborted) throw createAbortError();
 
     let startCourseBtnWideScreenRefEl;
@@ -509,7 +441,6 @@ async function renderPPStartCourseBtn({ signal }) {
                     ) {
                         if (!isScanning) renderPlaylistScanning({ signal });
                         isScanning = true;
-                        console.log("kuch alag mila:", video.tagName);
                         isThereMoreVideos = true;
                         waitForDuration = true;
                         html.scrollBy({
@@ -530,10 +461,6 @@ async function renderPPStartCourseBtn({ signal }) {
             }
 
             if (isScanning) removePlaylistScanning();
-            console.log("TOTAL DURATION:  ");
-            console.log("hours: ", hours);
-            console.log("minutes: ", minutes);
-            console.log("seconds: ", seconds);
             state.totalDuration = {
                 hours,
                 minutes,
@@ -559,123 +486,12 @@ async function renderPPStartCourseBtn({ signal }) {
                 behavior: "instant",
             });
             setToStorage();
-        } else {
-            console.log("Already a course");
         }
     }
-
-    console.log("playlist page ----start course ----- btn rendered");
-}
-
-// async function getAllPlaylistVideoElements({ signal }) {
-//     const contentDiv = await waitForElement({
-//         selector: SELECTORS.playlistPage.contentDiv,
-//         signal,
-//     });
-//     let allElements = Array.from(contentDiv.children);
-//     let isThereMoreVideos = true;
-//     let isScanning = false;
-
-//     let updateScannedVideosCount; // function to update scanned videos count while scanning playlist
-
-//     while (isThereMoreVideos) {
-//         if (signal.aborted) throw createAbortError();
-//         isThereMoreVideos = false;
-
-//         const lastElement = allElements[allElements.length - 1];
-//         debugger;
-//         // Check if the last element is the continuation/spinner
-//         if (
-//             lastElement &&
-//             lastElement.tagName.toLowerCase() ===
-//                 "ytd-continuation-item-renderer"
-//         ) {
-//             isThereMoreVideos = true;
-//             // if (!isScanning) {
-//             //     debugger;
-//             //     // await renderPlaylistScanning({ signal });
-//             //     isScanning = true;
-
-//             //     // the callback that will update the UI (no. of videos scanned )
-//             //     const countElement = document.querySelector(
-//             //         "#scanned-videos-count"
-//             //     );
-//             //     updateScannedVideosCount = () => {
-//             //         const newCount = allElements.filter(
-//             //             (el) =>
-//             //                 el.tagName.toLowerCase() ===
-//             //                 "ytd-playlist-video-renderer"
-//             //         ).length;
-
-//             //         if (countElement) {
-//             //             countElement.textContent = newCount;
-//             //         }
-//             //     };
-//             // }
-
-//             debugger;
-//             const html = document.documentElement;
-//             const originalScroll = html.scrollTop;
-
-//             const newNodes = await getMoreVideos({ originalScroll, signal });
-//             html.scrollTo(0, originalScroll);
-//             allElements.push(...newNodes);
-//             // updateScannedVideosCount();
-//         }
-//     }
-//     // if (isScanning) {
-//     //     // removePlaylistScanning();
-//     //     isScanning = false;
-//     // }
-//     // Filter out any non-video elements from the final list
-//     return allElements.filter(
-//         (el) => el.tagName.toLowerCase() === "ytd-playlist-video-renderer"
-//     );
-// }
-async function scanPlaylistForCourseData({ videoElements, signal }) {
-    let totalSeconds = 0;
-    const videoWatchStatus = {};
-
-    for (const video of videoElements) {
-        if (signal.aborted) throw createAbortError();
-
-        if (video.tagName.toLowerCase().includes("video-renderer")) {
-            const durationEl = await waitForElement({
-                selector: SELECTORS.videoDuration,
-                parentEl: video,
-                signal,
-            });
-            totalSeconds += parseDurationToSeconds(durationEl.textContent);
-
-            const linkEl =
-                video.querySelector("#wc-endpoint") ||
-                video.querySelector("#video-title");
-            if (linkEl) {
-                const videoId = getVideoId(linkEl.href);
-                if (videoId) {
-                    videoWatchStatus[videoId] = false;
-                }
-            }
-        }
-    }
-
-    // Convert total seconds back into an H:M:S object
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    return {
-        totalDuration: { hours, minutes, seconds },
-        videoWatchStatus,
-    };
 }
 
 async function renderDisabledStartCourseBtn({ signal }) {
     if (signal.aborted) throw createAbortError();
-    console.log(
-        "-------------calling wait for element----------------------------"
-    );
-
     const menu = await waitForElement({
         selector: SELECTORS.watchPage.playlistMenu,
         signal,
@@ -695,22 +511,14 @@ async function renderDisabledStartCourseBtn({ signal }) {
         e.stopPropagation();
     });
 }
+
 async function renderWPVideoCheckboxes({ signal }) {
     if (signal?.aborted) return;
-    console.log(
-        "-------------calling wait for element----------------------------"
-    );
-
     const playlistItems = await waitForElement({
         selector: SELECTORS.watchPage.playlistItems,
         signal,
     });
     const playlistVideos = playlistItems.children;
-    console.log("playlist videos before running loop:");
-    if (playlistVideos) {
-        const temp = [...playlistVideos];
-        console.log(temp);
-    } else console.log("seems empty");
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
         if (video.tagName === "YTD-PLAYLIST-PANEL-VIDEO-RENDERER") {
@@ -726,12 +534,6 @@ async function renderWPVideoCheckboxes({ signal }) {
 
             checkbox.addEventListener("click", async (e) => {
                 state.videoWatchStatus[videoId] = e.target.checked;
-                // setToStorage(playlistId, {  // unnecessary as add or remove will take care of storing it also
-                //     totalDuration,
-                //     watchedDuration,
-                //     videoWatchStatus,
-                // });
-
                 let videoDuration;
                 if (video.querySelector(SELECTORS.videoDuration)) {
                     videoDuration = video.querySelector(
@@ -755,22 +557,15 @@ async function renderWPVideoCheckboxes({ signal }) {
             menu.appendChild(checkboxWrapper);
         }
     }
-    console.log("watch page checkboxes rendered successfully!");
 }
+
 async function renderPPVideoCheckboxes({ signal }) {
     if (signal.aborted) throw createAbortError();
-    console.log("rendering pp video checkboxes");
-    console.log(
-        "-------------calling wait for element----------------------------"
-    );
-
     const contentDiv = await waitForElement({
         selector: SELECTORS.playlistPage.contentDiv,
         signal,
     });
     let playlistVideos = contentDiv.children;
-    console.log("video watch status: ");
-    console.log(state.videoWatchStatus);
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
         if (video.tagName === "YTD-PLAYLIST-VIDEO-RENDERER") {
@@ -785,19 +580,12 @@ async function renderPPVideoCheckboxes({ signal }) {
 
             checkbox.addEventListener("click", async (e) => {
                 state.videoWatchStatus[videoId] = e.target.checked;
-                // setToStorage(playlistId, { // will be taken care by add or remove watch duration
-                //     totalDuration,
-                //     watchedDuration,
-                //     videoWatchStatus,
-                // });
                 const videoDuration = video.querySelector(
                     SELECTORS.videoDuration
                 ).textContent;
 
                 if (e.target.checked) addToWatchedDuration(videoDuration);
                 else removeFromWatchDuration(videoDuration);
-                console.log("watched Duration: ");
-                console.log(state.watchedDuration);
             });
 
             const menu = video.querySelector("#menu");
@@ -837,7 +625,6 @@ async function renderPPVideoCheckboxes({ signal }) {
                         menu.appendChild(checkboxWrapper);
                     } else {
                         observer.observe(contentDiv, config);
-                        console.log("mutation observer again connected");
                     }
                 }
             };
@@ -850,24 +637,6 @@ async function renderPPVideoCheckboxes({ signal }) {
                 signal.removeEventListener("abort", abortListener);
             }
         }
-    }
-}
-
-function updateVideoCheckboxes(page) {
-    let allCheckboxesWrapper;
-    if (page === PAGE_TYPE.WATCH) {
-        allCheckboxesWrapper = document.querySelectorAll(
-            ".tmc-wp-checkbox-wrapper"
-        );
-    } else if (page === PAGE_TYPE.PLAYLIST) {
-        allCheckboxesWrapper = document.querySelectorAll(
-            ".tmc-pp-checkbox-wrapper"
-        );
-    }
-    if (allCheckboxesWrapper && allCheckboxesWrapper.length === 0) return;
-    for (const checkboxWrapper of allCheckboxesWrapper) {
-        const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
-        checkbox.checked = state.videoWatchStatus[checkbox.id] ?? false;
     }
 }
 
@@ -957,6 +726,7 @@ async function renderWPProgressDiv({ signal }) {
         await chrome.storage.local.remove(state.playlistId);
     });
 }
+
 async function renderPPProgressDiv({ signal }) {
     if (signal.aborted) throw createAbortError();
 
@@ -1042,6 +812,125 @@ async function renderPPProgressDiv({ signal }) {
         "beforebegin",
         progressDiv
     );
+}
+
+async function renderPlaylistScanning({ signal }) {
+    if (signal.aborted) throw createAbortError();
+
+    const contentDiv = await waitForElement({
+        selector: SELECTORS.playlistPage.contentDiv,
+        signal,
+    });
+
+    const scanningPlaylistEl = document.createElement("div");
+    scanningPlaylistEl.className = "tmc-scanning-playlist";
+    const scanningTextEl = document.createElement("div");
+    scanningTextEl.className = "tmc-scanning-text";
+    scanningTextEl.innerHTML = `Scanning Playlist..
+        <p> <span id="scanned-videos-count">${
+            Object.keys(state.videoWatchStatus).length
+        }</span> videos scanned</p>
+        `;
+    contentDiv.appendChild(scanningPlaylistEl);
+    contentDiv.appendChild(scanningTextEl);
+    updateScanningTextLeft();
+
+    function updateScanningTextLeft() {
+        const rect = scanningPlaylistEl.getBoundingClientRect();
+        scanningTextEl.style.left = `${rect.left + rect.width / 2}px`;
+    }
+    const resizeObserver = new ResizeObserver(updateScanningTextLeft);
+    resizeObserver.observe(scanningPlaylistEl);
+}
+
+function removePlaylistScanning() {
+    const scanningPlaylistEl = document.querySelector(".tmc-scanning-playlist");
+    const scanningTextEl = document.querySelector(".tmc-scanning-text");
+    if (scanningPlaylistEl) scanningPlaylistEl.remove();
+    if (scanningTextEl) scanningTextEl.remove();
+}
+
+async function refreshUI() {
+    if (state.activePageUpdateController) {
+        state.activePageUpdateController.abort();
+    }
+    state.activePageUpdateController = new AbortController();
+    const { signal } = state.activePageUpdateController;
+
+    try {
+        await updateStateVariables({ signal });
+
+        if (state.currentPage === PAGE_TYPE.WATCH) {
+            refreshWatchPageUI({ signal });
+        } else if (state.currentPage === PAGE_TYPE.PLAYLIST) {
+            refreshPlaylistPageUI({ signal });
+        }
+    } catch (err) {
+        if (err.name !== "AbortError") {
+            console.error("Unexpected error during refreshUI:", err);
+        }
+    }
+}
+
+function refreshWatchPageUI({ signal }) {
+    const progressDiv = document.querySelector(".tmc-wp-progress-div");
+    if (!progressDiv) return; // Exit if the UI isn't rendered
+
+    // Update time displays
+    progressDiv.querySelector(
+        "#watched-time"
+    ).textContent = `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
+    progressDiv.querySelector(
+        "#total-time"
+    ).textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+    progressDiv.querySelector(
+        "#invested-time"
+    ).textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
+
+    if (signal.aborted) return;
+    progressDiv.querySelector("#watched-videos-count").textContent =
+        Object.values(state.videoWatchStatus).filter(Boolean).length;
+    progressDiv.querySelector("#total-videos-count").textContent = Object.keys(
+        state.videoWatchStatus
+    ).length;
+
+    const percentage = calculateCompletionPercentage();
+    progressDiv.querySelector("#completed-percentage").textContent = percentage;
+    progressDiv.querySelector("#progress-bar").style.width = `${percentage}%`;
+
+    if (signal.aborted) return;
+
+    updateVideoCheckboxes(PAGE_TYPE.WATCH);
+}
+
+function refreshPlaylistPageUI({ signal }) {
+    const progressDiv = document.querySelector(".tmc-pp-progress-div");
+    if (!progressDiv) return;
+
+    if (signal.aborted) return;
+    progressDiv.querySelector(".tmc-watched-text").textContent = `${
+        Object.values(state.videoWatchStatus).filter(Boolean).length
+    } / ${Object.keys(state.videoWatchStatus).length} watched`;
+
+    updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
+}
+
+function updateVideoCheckboxes(page) {
+    let allCheckboxesWrapper;
+    if (page === PAGE_TYPE.WATCH) {
+        allCheckboxesWrapper = document.querySelectorAll(
+            ".tmc-wp-checkbox-wrapper"
+        );
+    } else if (page === PAGE_TYPE.PLAYLIST) {
+        allCheckboxesWrapper = document.querySelectorAll(
+            ".tmc-pp-checkbox-wrapper"
+        );
+    }
+    if (allCheckboxesWrapper && allCheckboxesWrapper.length === 0) return;
+    for (const checkboxWrapper of allCheckboxesWrapper) {
+        const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
+        checkbox.checked = state.videoWatchStatus[checkbox.id] ?? false;
+    }
 }
 
 // Handles the responsive placement of all custom UI (progress div, start button) on the playlist page.
@@ -1131,11 +1020,163 @@ async function updatePlaylistPageLayout(mediaQuery) {
     }
 }
 
-// utility functions
+// ---UI CLEANUP---
+function removeWPStartCourseBtn() {
+    const startCourseBtn = document.querySelector(".tmc-wp-start-course-btn");
+    if (startCourseBtn) startCourseBtn.remove();
+}
+
+function removePPStartCourseBtn() {
+    const startCourseBtn = document.querySelector(".tmc-pp-start-course-btn");
+    if (startCourseBtn) startCourseBtn.remove();
+}
+
+function removeStartCourseBtn() {
+    const startCourseBtn = document.querySelector(".tmc-start-course-btn");
+    if (startCourseBtn) startCourseBtn.remove();
+}
+
+function removeWPProgressDiv() {
+    const progressDiv = document.querySelector(".tmc-wp-progress-div");
+
+    if (progressDiv) {
+        progressDiv.remove();
+    }
+
+    const headerContents = document.querySelector(
+        SELECTORS.watchPage.headerContents
+    );
+    if (headerContents && state.playlistActions) {
+        headerContents.appendChild(state.playlistActions);
+    }
+}
+
+function removePPProgressDiv() {
+    const progressDiv = document.querySelector(".tmc-pp-progress-div");
+    if (progressDiv) {
+        progressDiv.remove();
+    }
+}
+
+function removeProgressDiv() {
+    const progressDiv = document.querySelector(".tmc-progress-div");
+
+    if (progressDiv) {
+        progressDiv.remove();
+    }
+
+    const headerContents = document.querySelector(
+        SELECTORS.watchPage.headerContents
+    );
+
+    if (headerContents && state.playlistActions)
+        headerContents.appendChild(state.playlistActions);
+}
+
+function removeWPVideoCheckboxes() {
+    const allCheckboxes = document.querySelectorAll(".tmc-wp-checkbox-wrapper");
+    if (allCheckboxes.length > 0) {
+        allCheckboxes.forEach((checkbox) => {
+            checkbox.remove();
+        });
+    }
+}
+
+function removePPVideoCheckboxes() {
+    const allCheckboxes = document.querySelectorAll(".tmc-pp-checkbox-wrapper");
+    if (allCheckboxes.length > 0) {
+        allCheckboxes.forEach((checkbox) => {
+            checkbox.remove();
+        });
+    }
+}
+
+function removeVideoCheckboxes() {
+    const allCheckboxes = document.querySelectorAll(".tmc-checkbox-wrapper");
+    if (allCheckboxes.length > 0) {
+        allCheckboxes.forEach((checkbox) => {
+            checkbox.remove();
+        });
+    }
+}
+
+function performCleanUp() {
+    removeStartCourseBtn();
+    removeVideoCheckboxes();
+    removeProgressDiv();
+    removePPMediaQueryListener();
+    if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
+}
+
+// --- UTILITY FUNCTIONS ---
 function getPlaylistId(url) {
     if (!url || !url.includes("list=")) return null;
     const playlistId = url.split("list=")[1].split("&")[0];
     return playlistId;
+}
+
+function getVideoId(url) {
+    if (!url || !url.includes("v=")) return null;
+    const videoId = url.split("v=")[1].split("&")[0];
+    return videoId;
+}
+
+function parseDurationToSeconds(durationString) {
+    const parts = durationString.trim().split(":").map(Number);
+    if (parts.length === 3) {
+        // [HH, MM, SS]
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    if (parts.length === 2) {
+        // [MM, SS]
+        return parts[0] * 60 + parts[1];
+    }
+    return 0;
+}
+
+function calculateCompletionPercentage() {
+    const watchedSeconds =
+        state.watchedDuration.hours * 3600 +
+        state.watchedDuration.minutes * 60 +
+        state.watchedDuration.seconds;
+    const totalSeconds =
+        state.totalDuration.hours * 3600 +
+        state.totalDuration.minutes * 60 +
+        state.totalDuration.seconds;
+    if (totalSeconds === 0) return 0;
+    return Math.round((watchedSeconds / totalSeconds) * 100);
+}
+
+function createAbortError() {
+    return new DOMException("The operation was aborted.", "AbortError");
+}
+
+function waitForNavigation() {
+    return new Promise((resolve) => {
+        const navProgress = document.querySelector(
+            SELECTORS.ytNavigationProgress
+        );
+
+        // If there's no progress bar, navigation is instant or already done.
+        if (
+            !navProgress ||
+            navProgress.getAttribute("aria-valuenow") === "100"
+        ) {
+            return resolve();
+        }
+
+        const observer = new MutationObserver((mutations, obs) => {
+            if (navProgress.getAttribute("aria-valuenow") === "100") {
+                obs.disconnect();
+                resolve();
+            }
+        });
+
+        observer.observe(navProgress, {
+            attributes: true,
+            attributeFilter: ["aria-valuenow"],
+        });
+    });
 }
 
 function waitForElement({ selector, signal, parentEl = document.body }) {
@@ -1185,90 +1226,34 @@ function waitForElement({ selector, signal, parentEl = document.body }) {
         }
     });
 }
-async function getFromStorage(key) {
-    try {
-        return await chrome.storage.local.get([key]);
-    } catch (err) {
-        console.log("Error getting from storage:", err);
-        return {};
-    }
-}
-function setToStorage() {
-    chrome.storage.local.set(
-        {
-            [state.playlistId]: {
-                totalDuration: state.totalDuration,
-                watchedDuration: state.watchedDuration,
-                videoWatchStatus: state.videoWatchStatus,
-                investedTime: state.investedTime,
-                courseImgSrc: state.courseImgSrc,
-                courseName: state.courseName,
-            },
-        },
-        () => {
-            if (chrome.runtime.lastError) {
-                console.log("Storage error:", chrome.runtime.lastError);
-            } else {
-                console.log("Storage success");
-            }
-        }
-    );
-}
-function getVideoId(url) {
-    if (!url || !url.includes("v=")) return null;
-    const videoId = url.split("v=")[1].split("&")[0];
-    return videoId;
-}
-async function getMoreVideos({ originalScroll, signal }) {
-    if (signal?.aborted) return Promise.reject(createAbortError());
-    // const html = document.documentElement;
-    // html.scrollBy(0, 100000000); // Scroll to the bottom
 
-    return new Promise(async (resolve, reject) => {
-        const timeout = setTimeout(() => {
-            console.log("getMoreVideos Promise timed out and rejected");
-            observer.disconnect();
-            reject(new DOMException("Operation timed out.", "TimeoutError"));
-        }, 60000);
+async function imgSrcToBase64(imgSrc) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const image = new Image();
 
-        // Handle abortion signal
-        const abortListener = () => {
-            clearTimeout(timeout);
-            observer.disconnect();
-            reject(createAbortError());
-        };
-        signal.addEventListener("abort", abortListener, { once: true });
+        image.crossOrigin = "anonymous";
 
-        // Restore scroll position after a brief moment
-        // setTimeout(() => {
-        //     const html = document.querySelector("html");
-        //     html.scrollTo(0, originalScroll);
-        // }, 10);
+        image.onload = () => {
+            canvas.width = image.naturalWidth;
+            canvas.height = image.naturalHeight;
 
-        const contentDiv = await waitForElement({
-            selector: SELECTORS.playlistPage.contentDiv,
-            signal,
-        });
+            ctx.drawImage(image, 0, 0);
 
-        const callback = (mutationList, obs) => {
-            for (const mutation of mutationList) {
-                if (mutation.addedNodes.length > 0) {
-                    clearTimeout(timeout);
-                    signal?.removeEventListener("abort", abortListener);
-                    observer.disconnect();
-                    resolve(mutation.addedNodes);
-                }
-            }
+            const dataURL = canvas.toDataURL("image/webp");
+
+            resolve(dataURL);
         };
 
-        const observer = new MutationObserver(callback);
-        observer.observe(contentDiv, { childList: true });
+        image.onerror = () => {
+            reject(new Error("Could not load the image."));
+        };
+        image.src = imgSrc;
     });
 }
 
 function addToWatchedDuration(videoDuration) {
-    console.log("YE ADD Karna hai videoDuration:");
-    console.log(videoDuration);
     const videoDurationArr = videoDuration.split(":");
     let hours = 0;
     let minutes = 0;
@@ -1294,6 +1279,7 @@ function addToWatchedDuration(videoDuration) {
     state.watchedDuration.hours += hours;
     setToStorage();
 }
+
 function removeFromWatchDuration(videoDuration) {
     const videoDurationArr = videoDuration.split(":");
     let hours = 0;
@@ -1320,56 +1306,117 @@ function removeFromWatchDuration(videoDuration) {
     state.watchedDuration.hours -= hours;
     setToStorage();
 }
-function removePPStartCourseBtn() {
-    const startCourseBtn = document.querySelector(".tmc-pp-start-course-btn");
-    if (startCourseBtn) startCourseBtn.remove();
-    console.log("start button removed");
-}
 
-function removeWPStartCourseBtn() {
-    const startCourseBtn = document.querySelector(".tmc-wp-start-course-btn");
-    if (startCourseBtn) startCourseBtn.remove();
-    console.log("start button removed");
-}
+async function scanPlaylistForCourseData({ videoElements, signal }) {
+    let totalSeconds = 0;
+    const videoWatchStatus = {};
 
-function removeWPProgressDiv() {
-    const progressDiv = document.querySelector(".tmc-wp-progress-div");
+    for (const video of videoElements) {
+        if (signal.aborted) throw createAbortError();
 
-    if (progressDiv) {
-        progressDiv.remove();
-        console.log("progress div removed");
+        if (video.tagName.toLowerCase().includes("video-renderer")) {
+            const durationEl = await waitForElement({
+                selector: SELECTORS.videoDuration,
+                parentEl: video,
+                signal,
+            });
+            totalSeconds += parseDurationToSeconds(durationEl.textContent);
+
+            const linkEl =
+                video.querySelector("#wc-endpoint") ||
+                video.querySelector("#video-title");
+            if (linkEl) {
+                const videoId = getVideoId(linkEl.href);
+                if (videoId) {
+                    videoWatchStatus[videoId] = false;
+                }
+            }
+        }
     }
 
-    const headerContents = document.querySelector(
-        SELECTORS.watchPage.headerContents
+    // Convert total seconds back into an H:M:S object
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return {
+        totalDuration: { hours, minutes, seconds },
+        videoWatchStatus,
+    };
+}
+
+async function getFromStorage(key) {
+    try {
+        return await chrome.storage.local.get([key]);
+    } catch (err) {
+        return {};
+    }
+}
+
+function setToStorage() {
+    chrome.storage.local.set(
+        {
+            [state.playlistId]: {
+                totalDuration: state.totalDuration,
+                watchedDuration: state.watchedDuration,
+                videoWatchStatus: state.videoWatchStatus,
+                investedTime: state.investedTime,
+                courseImgSrc: state.courseImgSrc,
+                courseName: state.courseName,
+            },
+        },
+        () => {
+            if (chrome.runtime.lastError) {
+                // ignore
+            }
+        }
     );
-
-    console.log("header contents: ");
-    console.log(headerContents);
-    if (headerContents && state.playlistActions) {
-        headerContents.appendChild(state.playlistActions);
-    }
 }
-function removePPProgressDiv() {
-    const progressDiv = document.querySelector(".tmc-pp-progress-div");
-    console.log(progressDiv);
 
-    if (progressDiv) {
-        progressDiv.remove();
-        console.log("progress div removed");
-    }
+async function getMoreVideos({ signal }) {
+    if (signal?.aborted) return Promise.reject(createAbortError());
+
+    return new Promise(async (resolve, reject) => {
+        const timeout = setTimeout(() => {
+            observer.disconnect();
+            reject(createAbortError());
+        }, 60000);
+
+        // Handle abortion signal
+        const abortListener = () => {
+            clearTimeout(timeout);
+            observer.disconnect();
+            reject(createAbortError());
+        };
+        signal.addEventListener("abort", abortListener, { once: true });
+        const contentDiv = await waitForElement({
+            selector: SELECTORS.playlistPage.contentDiv,
+            signal,
+        });
+
+        const callback = (mutationList, obs) => {
+            for (const mutation of mutationList) {
+                if (mutation.addedNodes.length > 0) {
+                    clearTimeout(timeout);
+                    signal?.removeEventListener("abort", abortListener);
+                    observer.disconnect();
+                    resolve(mutation.addedNodes);
+                }
+            }
+        };
+
+        const observer = new MutationObserver(callback);
+        observer.observe(contentDiv, { childList: true });
+    });
 }
 
 async function checkIsYtCourse({ signal }) {
-    console.log("Checking if a YouTube course...");
-
     const performCheck = () => {
         const courseTextEl = document.querySelectorAll(
             SELECTORS.playlistPage.courseTextEl
         );
         for (el of courseTextEl) {
             if (el?.textContent.toLowerCase() === "course") {
-                console.log("======= It is a course ==========");
                 return { found: true, isCourse: true };
             }
         }
@@ -1382,7 +1429,6 @@ async function checkIsYtCourse({ signal }) {
                 el?.textContent.toLowerCase() === "playlist" ||
                 el?.textContent.toLowerCase() === "podcast"
             ) {
-                console.log("======= It is a playlist ==========");
                 return { found: true, isCourse: false };
             }
         }
@@ -1394,14 +1440,12 @@ async function checkIsYtCourse({ signal }) {
 
         const initialCheck = performCheck();
         if (initialCheck.found) {
-            console.log("Found element on initial check.");
             return resolve(initialCheck.isCourse);
         }
 
         const observer = new MutationObserver(() => {
             const subsequentCheck = performCheck();
             if (subsequentCheck.found) {
-                console.log("Found element after mutation.");
                 observer.disconnect();
                 resolve(subsequentCheck.isCourse);
             }
@@ -1414,10 +1458,8 @@ async function checkIsYtCourse({ signal }) {
 
         const timeoutId = setTimeout(() => {
             observer.disconnect();
-            reject(
-                new DOMException("checkIsYtCourse timed out", "TimeoutError")
-            );
-        }, 30000);
+            reject(createAbortError());
+        }, 120000); // 2 minutes timeout
 
         const abortListener = () => {
             observer.disconnect();
@@ -1430,23 +1472,79 @@ async function checkIsYtCourse({ signal }) {
         }
     });
 }
-function removeProgressDiv() {
-    const progressDiv = document.querySelector(".tmc-progress-div");
-    console.log(progressDiv);
 
-    if (progressDiv) {
-        progressDiv.remove();
-        console.log("progress div removed");
+function initializeInvestedTimeTracker({ signal }) {
+    if (signal.aborted) throw createAbortError();
+
+    let intervalId = null;
+    function startTracking() {
+        if (intervalId !== null) return;
+        intervalId = setInterval(() => {
+            state.investedTime.seconds += 30;
+            if (state.investedTime.seconds >= 60) {
+                state.investedTime.minutes++;
+                state.investedTime.seconds %= 60;
+            }
+            if (state.investedTime.minutes >= 60) {
+                state.investedTime.hours++;
+                state.investedTime.minutes %= 60;
+            }
+            const investedTimeEl = document.querySelector("#invested-time");
+            if (investedTimeEl) {
+                investedTimeEl.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
+            }
+            setToStorage();
+        }, 30000);
     }
 
-    const headerContents = document.querySelector(
-        SELECTORS.watchPage.headerContents
-    );
+    function stopTracking() {
+        if (intervalId === null) return;
+        clearInterval(intervalId);
+        intervalId = null;
+    }
 
-    if (headerContents && state.playlistActions)
-        headerContents.appendChild(state.playlistActions);
+    if (Object.keys(state.videoWatchStatus).length === 0) {
+        stopTracking();
+    } else {
+        startTracking();
+
+        document.addEventListener("visibilitychange", visibilitychangeListener);
+    }
+
+    function visibilitychangeListener() {
+        if (document.visibilityState === "hidden") {
+            stopTracking();
+        } else if (document.visibilityState === "visible") {
+            startTracking();
+        }
+    }
+
+    function cleanup() {
+        if (intervalId !== null) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+        document.removeEventListener(
+            "visibilitychange",
+            visibilitychangeListener
+        );
+        state.investedTimeTrackerCleanup = null;
+    }
+    return cleanup;
 }
 
+function removePPMediaQueryListener() {
+    if (state.mediaQuery && state.PPProgressDivPlacementHandler) {
+        state.mediaQuery.removeEventListener(
+            "change",
+            state.PPProgressDivPlacementHandler
+        );
+        state.mediaQuery = null;
+        state.PPProgressDivPlacementHandler = null;
+    }
+}
+
+// --- SVG/ICON COMPONENTS ---
 function getCheckboxWrapper(page) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -1513,35 +1611,6 @@ function getCheckboxWrapper(page) {
     return wrapper;
 }
 
-function removeWPVideoCheckboxes() {
-    const allCheckboxes = document.querySelectorAll(".tmc-wp-checkbox-wrapper");
-    if (allCheckboxes.length > 0) {
-        allCheckboxes.forEach((checkbox) => {
-            checkbox.remove();
-        });
-    }
-    console.log("checkboxes removed");
-}
-
-function removePPVideoCheckboxes() {
-    const allCheckboxes = document.querySelectorAll(".tmc-pp-checkbox-wrapper");
-    if (allCheckboxes.length > 0) {
-        allCheckboxes.forEach((checkbox) => {
-            checkbox.remove();
-        });
-    }
-    console.log("checkboxes removed");
-}
-
-function removeVideoCheckboxes() {
-    const allCheckboxes = document.querySelectorAll(".tmc-checkbox-wrapper");
-    if (allCheckboxes.length > 0) {
-        allCheckboxes.forEach((checkbox) => {
-            checkbox.remove();
-        });
-    }
-    console.log("checkboxes removed");
-}
 function getVideoIconSVG() {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -1560,6 +1629,7 @@ function getVideoIconSVG() {
 
     return svg;
 }
+
 function getCheckCircleIconSVG() {
     const svgNS = "http://www.w3.org/2000/svg";
 
@@ -1591,6 +1661,7 @@ function getCheckCircleIconSVG() {
 
     return svg;
 }
+
 function getDurationIconSVG() {
     const svgNS = "http://www.w3.org/2000/svg";
 
@@ -1634,6 +1705,7 @@ function getDurationIconSVG() {
 
     return svg;
 }
+
 function getDeleteIconSVG() {
     const svgNS = "http://www.w3.org/2000/svg";
 
@@ -1655,225 +1727,4 @@ function getDeleteIconSVG() {
 
     svg.appendChild(path);
     return svg;
-}
-
-function performCleanUp() {
-    console.log("calling in perform cleanup to remove start course btn");
-    removeStartCourseBtn();
-    console.log("calling in perform cleanup to remove checkboxes");
-    removeVideoCheckboxes();
-    console.log("calling in perform cleanup to remove progress div");
-    removeProgressDiv();
-    removePPMediaQueryListener();
-    if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
-}
-function removeStartCourseBtn() {
-    const startCourseBtn = document.querySelector(".tmc-start-course-btn");
-    if (startCourseBtn) startCourseBtn.remove();
-    console.log("start button removed");
-}
-
-async function renderPlaylistScanning({ signal }) {
-    if (signal.aborted) throw createAbortError();
-
-    const contentDiv = await waitForElement({
-        selector: SELECTORS.playlistPage.contentDiv,
-        signal,
-    });
-
-    const scanningPlaylistEl = document.createElement("div");
-    scanningPlaylistEl.className = "tmc-scanning-playlist";
-    const scanningTextEl = document.createElement("div");
-    scanningTextEl.className = "tmc-scanning-text";
-    scanningTextEl.innerHTML = `Scanning Playlist..
-        <p> <span id="scanned-videos-count">${
-            Object.keys(state.videoWatchStatus).length
-        }</span> videos scanned</p>
-        `;
-    contentDiv.appendChild(scanningPlaylistEl);
-    contentDiv.appendChild(scanningTextEl);
-    updateScanningTextLeft();
-
-    function updateScanningTextLeft() {
-        const rect = scanningPlaylistEl.getBoundingClientRect();
-        console.log(rect);
-        scanningTextEl.style.left = `${rect.left + rect.width / 2}px`;
-    }
-    const resizeObserver = new ResizeObserver(updateScanningTextLeft);
-    resizeObserver.observe(scanningPlaylistEl);
-}
-function removePlaylistScanning() {
-    const scanningPlaylistEl = document.querySelector(".tmc-scanning-playlist");
-    const scanningTextEl = document.querySelector(".tmc-scanning-text");
-    if (scanningPlaylistEl) scanningPlaylistEl.remove();
-    if (scanningTextEl) scanningTextEl.remove();
-}
-
-function createAbortError() {
-    return new DOMException("The operation was aborted.", "AbortError");
-}
-
-function initializeInvestedTimeTracker({ signal }) {
-    if (signal.aborted) throw createAbortError();
-
-    let intervalId = null;
-    function startTracking() {
-        if (intervalId !== null) return;
-        intervalId = setInterval(() => {
-            state.investedTime.seconds += 30;
-            if (state.investedTime.seconds >= 60) {
-                state.investedTime.minutes++;
-                state.investedTime.seconds %= 60;
-            }
-            if (state.investedTime.minutes >= 60) {
-                state.investedTime.hours++;
-                state.investedTime.minutes %= 60;
-            }
-            const investedTimeEl = document.querySelector("#invested-time");
-            if (investedTimeEl) {
-                investedTimeEl.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
-            }
-            console.log(
-                `${state.investedTime.hours}h ${state.investedTime.minutes}m ${state.investedTime.seconds}s`
-            );
-            setToStorage();
-        }, 30000);
-    }
-
-    function stopTracking() {
-        if (intervalId === null) return;
-        clearInterval(intervalId);
-        intervalId = null;
-    }
-
-    if (Object.keys(state.videoWatchStatus).length === 0) {
-        stopTracking();
-    } else {
-        startTracking();
-
-        document.addEventListener("visibilitychange", visibilitychangeListener);
-    }
-
-    function visibilitychangeListener() {
-        if (document.visibilityState === "hidden") {
-            console.log("page hidden");
-            stopTracking();
-            // setToStorage();
-        } else if (document.visibilityState === "visible") {
-            console.log("page visible");
-            startTracking();
-        }
-    }
-
-    function cleanup() {
-        if (intervalId !== null) {
-            clearInterval(intervalId);
-            intervalId = null;
-        }
-        document.removeEventListener(
-            "visibilitychange",
-            visibilitychangeListener
-        );
-        state.investedTimeTrackerCleanup = null;
-    }
-
-    return cleanup;
-}
-
-async function imgSrcToBase64(imgSrc) {
-    return new Promise((resolve, reject) => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const image = new Image();
-
-        image.crossOrigin = "anonymous";
-
-        image.onload = () => {
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-
-            ctx.drawImage(image, 0, 0);
-
-            const dataURL = canvas.toDataURL("image/webp");
-
-            resolve(dataURL);
-        };
-
-        image.onerror = () => {
-            reject(
-                new Error(
-                    "Could not load the image. Check the URL and CORS policy."
-                )
-            );
-        };
-
-        // --- Step 3: Start loading the image ---
-        image.src = imgSrc;
-    });
-}
-
-function removePPMediaQueryListener() {
-    if (state.mediaQuery && state.PPProgressDivPlacementHandler) {
-        console.log("Removing playlist page matchMedia listener.");
-        state.mediaQuery.removeEventListener(
-            "change",
-            state.PPProgressDivPlacementHandler
-        );
-        state.mediaQuery = null;
-        state.PPProgressDivPlacementHandler = null;
-    }
-}
-
-function waitForNavigation() {
-    return new Promise((resolve) => {
-        const navProgress = document.querySelector(
-            SELECTORS.ytNavigationProgress
-        );
-
-        // If there's no progress bar, navigation is instant or already done.
-        if (
-            !navProgress ||
-            navProgress.getAttribute("aria-valuenow") === "100"
-        ) {
-            return resolve();
-        }
-
-        const observer = new MutationObserver((mutations, obs) => {
-            if (navProgress.getAttribute("aria-valuenow") === "100") {
-                obs.disconnect();
-                resolve();
-            }
-        });
-
-        observer.observe(navProgress, {
-            attributes: true,
-            attributeFilter: ["aria-valuenow"],
-        });
-    });
-}
-
-function calculateCompletionPercentage() {
-    const watchedSeconds =
-        state.watchedDuration.hours * 3600 +
-        state.watchedDuration.minutes * 60 +
-        state.watchedDuration.seconds;
-    const totalSeconds =
-        state.totalDuration.hours * 3600 +
-        state.totalDuration.minutes * 60 +
-        state.totalDuration.seconds;
-    if (totalSeconds === 0) return 0;
-    return Math.round((watchedSeconds / totalSeconds) * 100);
-}
-
-function parseDurationToSeconds(durationString) {
-    const parts = durationString.trim().split(":").map(Number);
-    if (parts.length === 3) {
-        // [HH, MM, SS]
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
-    }
-    if (parts.length === 2) {
-        // [MM, SS]
-        return parts[0] * 60 + parts[1];
-    }
-    return 0;
 }

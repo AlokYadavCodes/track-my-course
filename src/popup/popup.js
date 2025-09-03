@@ -52,7 +52,6 @@ async function renderCourses() {
     const inProgressCoursesEl = document.querySelector(".in-progress-courses");
     const completedCoursesEl = document.querySelector(".completed-courses");
 
-    // Get references to the new containers
     const welcomeMessageEl = document.getElementById("welcome-message");
     const courseListsContainerEl = document.getElementById(
         "course-lists-container"
@@ -69,7 +68,7 @@ async function renderCourses() {
         welcomeMessageEl.classList.remove("hidden");
         courseListsContainerEl.classList.add("hidden");
         updateCoursesCount();
-        return; // Stop the function here
+        return;
     }
 
     // If courses exist, show the lists and hide the welcome message
