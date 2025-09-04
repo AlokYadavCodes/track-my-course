@@ -1,50 +1,55 @@
-# TrackMyCourse – Track YouTube Playlists Like a Course
-Turn YouTube playlists into structured learning courses with progress tracking, right inside YouTube.
+# TrackMyCourse – YouTube Playlist Progress Tracker
+
+Turn YouTube playlists into courses. Track your playlist with checkmarks, progress bar, total and watched duration, and completion percentage.
 
 ![TrackMyCourse Banner](https://github.com/user-attachments/assets/642a93bb-9c8d-4e76-b452-537426eb9428)  
 [![Get it on Chrome Web Store](https://img.shields.io/chrome-web-store/v/eojbembojnleniamokihimgjikmpahin?label=Chrome%20Web%20Store&logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin)
 [![Star on GitHub](https://img.shields.io/github/stars/AlokYadavCodes/track-my-course?style=social)](https://github.com/AlokYadavCodes/track-my-course/stargazers)
 
-**TrackMyCourse** helps you stay organized while learning from YouTube playlists.  
+**TrackMyCourse** helps you stay organized while learning from YouTube playlists.
 
-Instead of passively watching videos and losing track of where you left off, you can now treat any playlist like a proper online course. The extension adds a simple, clean interface directly inside YouTube — showing your overall progress and marking completed videos to keep your learning path consistent.
+Instead of passively watching videos and forgetting your progress, you can turn any playlist into a structured online course. The extension integrates directly into YouTube, showing a progress bar, completion percentage, watched and total duration, and checkmarks for finished videos — giving you a clear view of your learning journey.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Open Issues](https://img.shields.io/github/issues/AlokYadavCodes/track-my-course)](https://github.com/AlokYadavCodes/track-my-course/issues) [![Pull Requests](https://img.shields.io/github/issues-pr/AlokYadavCodes/track-my-course)](https://github.com/AlokYadavCodes/track-my-course/pulls)
 
 ---
+
 ## 📚 Table of Contents
-- [Why TrackMyCourse?](#why-trackmycourse)
-- [✨ Features](#-features)
-- [🚀 Installation & Usage](#-installation--usage)
-- [🛠️ For Developers](#️-for-developers)
-  - [Contributing](#contributing)
-  - [Running Locally](#running-locally)
-  - [Project Structure](#project-structure)
-- [🔐 Permissions Explained](#-permissions-explained)
-- [📜 License](#-license)
+
+-   [Why TrackMyCourse?](#why-trackmycourse)
+-   [✨ Features](#-features)
+-   [🚀 Installation & Usage](#-installation--usage)
+-   [🛠️ For Developers](#️-for-developers)
+    -   [Contributing](#contributing)
+    -   [Running Locally](#running-locally)
+    -   [Project Structure](#project-structure)
+-   [🔐 Permissions Explained](#-permissions-explained)
+-   [📜 License](#-license)
 
 ---
 
 ## Why TrackMyCourse?
 
-YouTube is an amazing resource for self-education — from coding tutorials to university lectures.  
-But YouTube is built for entertainment, not structured learning, which makes it easy to lose track of videos, skip lessons accidentally, or lose motivation.
+YouTube is a powerful place for self-learning — from coding tutorials to full university lectures.  
+But since YouTube is designed for entertainment, not structured courses, it’s easy to lose progress, skip videos, or lose consistency.
 
-**TrackMyCourse** fixes this by adding a simple and clean course-tracking layer on top of YouTube playlists, helping you stay organized, consistent, and focused on your goals.
+**TrackMyCourse** solves this by adding a clean progress-tracking layer to YouTube playlists, showing completion percentage, durations, and checkmarks to keep your learning organized, consistent, and motivating.
 
-*Ready to use TrackMyCourse?* [Install now](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin) and start tracking your playlists.
-
+_Ready to use TrackMyCourse?_ [Install now](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin) and start tracking your playlists.
 
 ---
 
 ## ✨ Features
 
-- 📊 **Visual Progress Bar** – Quickly see how much of a playlist you've completed.  
-- ✅ **Video Checkboxes** – Mark individual videos as “done” to track your learning path.  
-- 🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.  
-- 💾 **Saved Locally** – Your progress is stored locally in your browser.  
+-   📊 **Visual Progress Bar** – Instantly see how much of a playlist you’ve completed.
+-   ✅ **Video Checkmarks** – Mark videos as finished to keep your learning on track.
+-   ⏱️ **Duration Tracking** – Know your watched and total time to plan your study sessions better.
+-   🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.
+-   💾 **Saved Locally** – Your progress stays saved in your browser, no sign-up needed.
 
-**Preview of Features:**  
+_All features appear seamlessly inside YouTube’s interface._
+
+**Preview of Features:**
 
 ![TrackMyCourse Features](https://github.com/user-attachments/assets/8c127ea8-cd61-4033-bd51-6ad586f467b0)
 
@@ -53,8 +58,8 @@ But YouTube is built for entertainment, not structured learning, which makes it 
 ## 🚀 Installation & Usage
 
 1. [Install TrackMyCourse](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin)
-2. Go to any YouTube playlist page.  
-3. Click the **"Start Course"** button near the playlist title.  
+2. Go to any YouTube playlist page.
+3. Click the **"Start Course"** button near the playlist title.
 
 Once enabled, the progress bar and checkboxes will automatically appear for that playlist.
 
@@ -65,9 +70,11 @@ Once enabled, the progress bar and checkboxes will automatically appear for that
 This section provides information for anyone who wants to contribute to the project or run it locally.
 
 ### Contributing
+
 Contributions are welcome! Bug fixes, feature suggestions, and pull requests are appreciated. For major changes, please open an issue first to discuss your ideas.
 
 ### Running Locally
+
 Follow these steps to set up the project on your local machine.
 
 1.  **Clone the repository:**
@@ -80,8 +87,8 @@ Follow these steps to set up the project on your local machine.
 
 > **Note:** Changes to the source code will only reflect after you reload the extension on the `chrome://extensions/` page.
 
-
 ### Project Structure
+
 ```
 track-my-course/
 ├── icons/          # Contains all extension icons.
@@ -92,17 +99,18 @@ track-my-course/
 ├── styles/         # Contains CSS files for UI elements injected onto pages.
 └── manifest.json   # Chrome extension configuration file.
 ```
+
 ---
 
 ## 🔐 Permissions Explained
 
 TrackMyCourse requests only the permissions it needs to function, nothing more.
 
-| Permission | Why It's Needed |
-| :--- | :--- |
-| `storage` | To save your playlist progress locally in the browser. |
-| `webNavigation` | To detect playlist pages so the extension can apply the correct logic. |
-| `host_permissions` | To display the progress UI only on YouTube pages. |
+| Permission         | Why It's Needed                                                        |
+| :----------------- | :--------------------------------------------------------------------- |
+| `storage`          | To save your playlist progress locally in the browser.                 |
+| `webNavigation`    | To detect playlist pages so the extension can apply the correct logic. |
+| `host_permissions` | To display the progress UI only on YouTube pages.                      |
 
 **Privacy first:** No personal data is collected, stored, or transmitted.
 
