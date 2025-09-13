@@ -341,7 +341,7 @@ async function renderPPStartCourseBtn({ signal }) {
     const startCourseBtn = document.createElement("a");
     startCourseBtn.textContent = "Start Course";
     startCourseBtn.className =
-        "tmc-start-course-btn tmc-pp-start-course-btn yt-spec-button-shape-next yt-spec-button-shape-next--filled yt-spec-button-shape-next--overlay yt-spec-button-shape-next--size-m yt-spec-button-shape-next--icon-leading yt-spec-button-shape-next--enable-backdrop-filter-experiment";
+        "tmc-start-course-btn tmc-pp-start-course-btn";
 
     startCourseBtnWideScreenRefEl.insertAdjacentElement(
         "afterend",
@@ -355,139 +355,7 @@ async function renderPPStartCourseBtn({ signal }) {
     }
 
     if (signal.aborted) throw createAbortError();
-    startCourseBtn.addEventListener("click", startCourseBtnClickListener);
-
-    let originalScroll;
-    async function startCourseBtnClickListener() {
-        if (Object.keys(state.videoWatchStatus).length === 0) {
-            const contentDiv = await waitForElement({
-                selector: SELECTORS.playlistPage.contentDiv,
-
-                signal,
-            });
-            let hours = 0;
-            let minutes = 0;
-            let seconds = 0;
-            let isThereMoreVideos = true;
-            let isScanning = false;
-            let playlistVideos = contentDiv.children;
-            if (playlistVideos.length === 0) return;
-            startCourseBtn.remove();
-
-            const html = document.querySelector("html");
-            originalScroll = html.scrollTop;
-
-            while (isThereMoreVideos) {
-                isThereMoreVideos = false;
-                for (const video of playlistVideos) {
-                    if (
-                        video.tagName.toLowerCase() ===
-                        "ytd-playlist-video-renderer"
-                    ) {
-                        let videoDuration;
-                        if (video.querySelector(SELECTORS.videoDuration)) {
-                            videoDuration = video.querySelector(
-                                SELECTORS.videoDuration
-                            ).textContent;
-                        } else {
-                            videoDuration = (
-                                await waitForElement({
-                                    selector: SELECTORS.videoDuration,
-
-                                    parentEl: video,
-
-                                    signal,
-                                })
-                            ).textContent;
-                        }
-                        const videoDurationArr = videoDuration.split(":");
-                        if (videoDurationArr.length == 2) {
-                            seconds += parseInt(videoDurationArr[1]);
-                            if (seconds >= 60) {
-                                minutes++;
-                                seconds %= 60;
-                            }
-                            minutes += parseInt(videoDurationArr[0]);
-                            if (minutes >= 60) {
-                                hours++;
-                                minutes %= 60;
-                            }
-                        } else if (videoDurationArr.length == 3) {
-                            seconds += parseInt(videoDurationArr[2]);
-                            if (seconds >= 60) {
-                                minutes++;
-                                seconds %= 60;
-                            }
-                            minutes += parseInt(videoDurationArr[1]);
-                            if (minutes >= 60) {
-                                hours++;
-                                minutes %= 60;
-                            }
-                            hours += parseInt(videoDurationArr[0]);
-                        }
-                        const url = video.querySelector("#video-title").href;
-                        const videoId = getVideoId(url);
-                        state.videoWatchStatus[videoId] = false;
-                        const scannedVideoCountEl = document.querySelector(
-                            "#scanned-videos-count"
-                        );
-                        if (scannedVideoCountEl)
-                            scannedVideoCountEl.textContent = Object.keys(
-                                state.videoWatchStatus
-                            ).length;
-                    } else if (
-                        video.tagName.toLowerCase() ===
-                        "ytd-continuation-item-renderer"
-                    ) {
-                        if (!isScanning) renderPlaylistScanning({ signal });
-                        isScanning = true;
-                        isThereMoreVideos = true;
-                        waitForDuration = true;
-                        html.scrollBy({
-                            top: 10000000,
-                            left: 0,
-                            behavior: "smooth",
-                        });
-
-                        playlistVideos = await getMoreVideos({
-                            originalScroll,
-
-                            signal,
-                        });
-
-                        break;
-                    }
-                }
-            }
-
-            if (isScanning) removePlaylistScanning();
-            state.totalDuration = {
-                hours,
-                minutes,
-                seconds,
-            };
-            const playlistImageSrc = document.querySelector(
-                "#contents:has(>ytd-playlist-video-renderer) img"
-            )?.src;
-            state.courseImgSrc = await imgSrcToBase64(playlistImageSrc);
-            if (state.isYtCourse) {
-                state.courseName = document.querySelector(
-                    SELECTORS.playlistPage.ytCourse.playlistNameEl
-                )?.textContent;
-            } else {
-                state.courseName = document.querySelector(
-                    SELECTORS.playlistPage.playlistNameEl
-                )?.textContent;
-            }
-
-            html.scrollTo({
-                top: originalScroll,
-                left: 0,
-                behavior: "instant",
-            });
-            setToStorage();
-        }
-    }
+    startCourseBtn.addEventListener("click", updatePlaylistData);
 }
 
 async function renderDisabledStartCourseBtn({ signal }) {
@@ -549,8 +417,9 @@ async function renderWPVideoCheckboxes({ signal }) {
                     ).textContent;
                 }
 
-                if (e.target.checked) addToWatchedDuration(videoDuration);
+                if (e.target.checked) addDurationTo(videoDuration, "watched");
                 else removeFromWatchDuration(videoDuration);
+                setToStorage();
             });
 
             const menu = video.querySelector("#menu");
@@ -584,8 +453,9 @@ async function renderPPVideoCheckboxes({ signal }) {
                     SELECTORS.videoDuration
                 ).textContent;
 
-                if (e.target.checked) addToWatchedDuration(videoDuration);
+                if (e.target.checked) addDurationTo(videoDuration, "watched");
                 else removeFromWatchDuration(videoDuration);
+                setToStorage();
             });
 
             const menu = video.querySelector("#menu");
@@ -594,7 +464,15 @@ async function renderPPVideoCheckboxes({ signal }) {
             const config = { childList: true };
             const callback = (mutationList, observer) => {
                 observer.disconnect();
-                playlistVideos = mutationList[1].addedNodes;
+                playlistVideos = [];
+                for (const mutation of mutationList) {
+                    if (mutation.addedNodes.length > 0) {
+                        playlistVideos = [
+                            ...playlistVideos,
+                            ...mutation.addedNodes,
+                        ];
+                    }
+                }
                 for (const video of playlistVideos) {
                     if (video.tagName === "YTD-PLAYLIST-VIDEO-RENDERER") {
                         const checkboxWrapper = getCheckboxWrapper(
@@ -617,8 +495,9 @@ async function renderPPVideoCheckboxes({ signal }) {
                             ).textContent;
 
                             if (e.target.checked)
-                                addToWatchedDuration(videoDuration);
+                                addDurationTo(videoDuration, "watched");
                             else removeFromWatchDuration(videoDuration);
+                            setToStorage();
                         });
 
                         const menu = video.querySelector("#menu");
@@ -762,10 +641,17 @@ async function renderPPProgressDiv({ signal }) {
                         .length
                 } / ${Object.keys(state.videoWatchStatus).length} watched</span>
             </div>
-            <div class="tmc-delete">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"></path>
-                </svg>
+            <div class="tmc-actions">
+                <div class="tmc-refresh" title="Refresh Playlist">
+                    <svg class="tmc-refresh-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
+                    </svg>
+                </div>
+                <div class="tmc-delete" title="Remove Course">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </div>
             </div>
         </div>
         <div class="tmc-delete-popup">
@@ -776,12 +662,26 @@ async function renderPPProgressDiv({ signal }) {
             </div>
         </div>
     `;
-
-    const deleteIcon = progressDiv.querySelector(".tmc-delete");
+    const refreshBtn = progressDiv.querySelector(".tmc-refresh");
+    const deleteBtn = progressDiv.querySelector(".tmc-delete");
     const confirmDeleteBtn = progressDiv.querySelector(".tmc-confirm-delete");
     const cancelDeleteBtn = progressDiv.querySelector(".tmc-cancel-delete");
 
-    deleteIcon.addEventListener("click", () => {
+    refreshBtn.addEventListener("click", () => {
+        const refreshBtnSVG = refreshBtn.querySelector("svg");
+        if (
+            refreshBtnSVG.classList.contains("rotating") ||
+            refreshBtnSVG.classList.contains("scanning")
+        ) {
+            return;
+        }
+        refreshBtnSVG.classList.add("rotating");
+        setTimeout(() => {
+            refreshBtnSVG.classList.remove("rotating");
+        }, 400);
+        updatePlaylistData();
+    });
+    deleteBtn.addEventListener("click", () => {
         progressDiv.classList.add("deleting");
     });
 
@@ -827,13 +727,14 @@ async function renderPlaylistScanning({ signal }) {
     const scanningTextEl = document.createElement("div");
     scanningTextEl.className = "tmc-scanning-text";
     scanningTextEl.innerHTML = `Scanning Playlist..
-        <p> <span id="scanned-videos-count">${
-            Object.keys(state.videoWatchStatus).length
-        }</span> videos scanned</p>
+        <p> <span id="scanned-videos-count">${100}</span> videos scanned</p>
         `;
     contentDiv.appendChild(scanningPlaylistEl);
     contentDiv.appendChild(scanningTextEl);
     updateScanningTextLeft();
+
+    const refreshBtnSVG = document.querySelector(".tmc-refresh-svg");
+    if (refreshBtnSVG) refreshBtnSVG.classList.add("scanning");
 
     function updateScanningTextLeft() {
         const rect = scanningPlaylistEl.getBoundingClientRect();
@@ -848,6 +749,9 @@ function removePlaylistScanning() {
     const scanningTextEl = document.querySelector(".tmc-scanning-text");
     if (scanningPlaylistEl) scanningPlaylistEl.remove();
     if (scanningTextEl) scanningTextEl.remove();
+
+    const refreshBtnSVG = document.querySelector(".tmc-refresh-svg");
+    if (refreshBtnSVG) refreshBtnSVG.classList.remove("scanning");
 }
 
 async function refreshUI() {
@@ -906,8 +810,16 @@ function refreshWatchPageUI({ signal }) {
 function refreshPlaylistPageUI({ signal }) {
     const progressDiv = document.querySelector(".tmc-pp-progress-div");
     if (!progressDiv) return;
-
     if (signal.aborted) return;
+
+    progressDiv.querySelector(".tmc-total-text").textContent = `${
+        Object.keys(state.videoWatchStatus).length
+    } videos`;
+
+    progressDiv.querySelector(
+        ".tmc-duration-text"
+    ).textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+
     progressDiv.querySelector(".tmc-watched-text").textContent = `${
         Object.values(state.videoWatchStatus).filter(Boolean).length
     } / ${Object.keys(state.videoWatchStatus).length} watched`;
@@ -1253,58 +1165,42 @@ async function imgSrcToBase64(imgSrc) {
     });
 }
 
-function addToWatchedDuration(videoDuration) {
-    const videoDurationArr = videoDuration.split(":");
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    if (videoDurationArr.length === 2) {
-        seconds = parseInt(videoDurationArr[1]);
-        minutes = parseInt(videoDurationArr[0]);
-    } else if (videoDurationArr.length === 3) {
-        seconds = parseInt(videoDurationArr[2]);
-        minutes = parseInt(videoDurationArr[1]);
-        hours = parseInt(videoDurationArr[0]);
+function addDurationTo(duration, target /* "watched" | "total" */) {
+    if (target !== "watched" && target !== "total") {
+        throw new Error(
+            `Invalid target: ${target}. Must be "watched" or "total"`
+        );
     }
-    state.watchedDuration.seconds += seconds;
-    if (state.watchedDuration.seconds >= 60) {
-        state.watchedDuration.minutes++;
-        state.watchedDuration.seconds %= 60;
-    }
-    state.watchedDuration.minutes += minutes;
-    if (state.watchedDuration.minutes >= 60) {
-        state.watchedDuration.hours++;
-        state.watchedDuration.minutes %= 60;
-    }
-    state.watchedDuration.hours += hours;
-    setToStorage();
+    const secondsToAdd = parseDurationToSeconds(duration);
+    let bucket = state[`${target}Duration`];
+    let totalSeconds =
+        bucket.hours * 3600 + bucket.minutes * 60 + bucket.seconds;
+    totalSeconds += secondsToAdd;
+
+    // Normalize back to h:m:s
+    state[`${target}Duration`] = formatDuration(totalSeconds);
 }
 
 function removeFromWatchDuration(videoDuration) {
-    const videoDurationArr = videoDuration.split(":");
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    if (videoDurationArr.length === 2) {
-        seconds = parseInt(videoDurationArr[1]);
-        minutes = parseInt(videoDurationArr[0]);
-    } else if (videoDurationArr.length === 3) {
-        seconds = parseInt(videoDurationArr[2]);
-        minutes = parseInt(videoDurationArr[1]);
-        hours = parseInt(videoDurationArr[0]);
-    }
-    if (seconds > state.watchedDuration.seconds) {
-        state.watchedDuration.minutes--;
-        state.watchedDuration.seconds += 60 - seconds;
-    } else state.watchedDuration.seconds -= seconds;
+    const removeSeconds = parseDurationToSeconds(videoDuration);
+    let currentSeconds =
+        state.watchedDuration.hours * 3600 +
+        state.watchedDuration.minutes * 60 +
+        state.watchedDuration.seconds;
 
-    if (minutes > state.watchedDuration.minutes) {
-        state.watchedDuration.hours--;
-        state.watchedDuration.minutes += 60 - minutes;
-    } else state.watchedDuration.minutes -= minutes;
+    currentSeconds -= removeSeconds;
 
-    state.watchedDuration.hours -= hours;
+    // Normalize back to h:m:s
+    state.watchedDuration = formatDuration(currentSeconds);
     setToStorage();
+}
+
+function formatDuration(seconds) {
+    return {
+        hours: Math.floor(seconds / 3600),
+        minutes: Math.floor((seconds % 3600) / 60),
+        seconds: seconds % 60,
+    };
 }
 
 async function scanPlaylistForCourseData({ videoElements, signal }) {
@@ -1343,6 +1239,105 @@ async function scanPlaylistForCourseData({ videoElements, signal }) {
         totalDuration: { hours, minutes, seconds },
         videoWatchStatus,
     };
+}
+
+async function updatePlaylistData() {
+    const signal = state.activePageUpdateController.signal;
+    const contentDiv = await waitForElement({
+        selector: SELECTORS.playlistPage.contentDiv,
+        signal,
+    });
+    let isThereMoreVideos = true;
+    let isScanning = false;
+    let videoWatchStatus = {};
+    let playlistVideos = contentDiv.children;
+    // TODO: if length is 0, it never reaches here. It keeps waiting for contentDiv indefinitely (above) because of contentDiv selector having :has() and it's empty
+    // so it will not update when playlist is empty. Needs to be fixed.
+    if (playlistVideos.length === 0) return;
+    state.totalDuration = { hours: 0, minutes: 0, seconds: 0 }; // Reset
+    state.watchedDuration = { hours: 0, minutes: 0, seconds: 0 }; // Reset
+
+    const html = document.querySelector("html");
+    const originalScroll = html.scrollTop;
+
+    while (isThereMoreVideos) {
+        isThereMoreVideos = false;
+        for (const video of playlistVideos) {
+            if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
+                let videoDuration;
+                if (video.querySelector(SELECTORS.videoDuration)) {
+                    videoDuration = video.querySelector(
+                        SELECTORS.videoDuration
+                    ).textContent;
+                } else {
+                    videoDuration = (
+                        await waitForElement({
+                            selector: SELECTORS.videoDuration,
+                            parentEl: video,
+                            signal,
+                        })
+                    ).textContent;
+                }
+                addDurationTo(videoDuration, "total");
+                const url = video.querySelector("#video-title").href;
+                const videoId = getVideoId(url);
+                videoWatchStatus[videoId] =
+                    state.videoWatchStatus[videoId] ?? false;
+                if (videoWatchStatus[videoId] === true) {
+                    addDurationTo(videoDuration, "watched");
+                }
+                const scannedVideoCountEl = document.querySelector(
+                    "#scanned-videos-count"
+                );
+                if (scannedVideoCountEl)
+                    scannedVideoCountEl.textContent =
+                        Object.keys(videoWatchStatus).length;
+            } else if (
+                video.tagName.toLowerCase() === "ytd-continuation-item-renderer"
+            ) {
+                if (!isScanning) renderPlaylistScanning({ signal });
+                isScanning = true;
+                isThereMoreVideos = true;
+                waitForDuration = true;
+                html.scrollBy({
+                    top: 10000000,
+                    left: 0,
+                    behavior: "smooth",
+                });
+
+                playlistVideos = await getMoreVideos({
+                    originalScroll,
+                    signal,
+                });
+
+                break;
+            }
+        }
+    }
+
+    if (isScanning) removePlaylistScanning();
+
+    state.videoWatchStatus = videoWatchStatus;
+    const playlistImageSrc = document.querySelector(
+        "#contents:has(>ytd-playlist-video-renderer) img"
+    )?.src;
+    state.courseImgSrc = await imgSrcToBase64(playlistImageSrc);
+    if (state.isYtCourse) {
+        state.courseName = document.querySelector(
+            SELECTORS.playlistPage.ytCourse.playlistNameEl
+        )?.textContent;
+    } else {
+        state.courseName = document.querySelector(
+            SELECTORS.playlistPage.playlistNameEl
+        )?.textContent;
+    }
+
+    html.scrollTo({
+        top: originalScroll,
+        left: 0,
+        behavior: "instant",
+    });
+    setToStorage();
 }
 
 async function getFromStorage(key) {
@@ -1704,6 +1699,13 @@ function getDurationIconSVG() {
     svg.appendChild(minute);
 
     return svg;
+}
+
+function getRefreshIconSVG() {
+    return `
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+  <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
+</svg>`;
 }
 
 function getDeleteIconSVG() {

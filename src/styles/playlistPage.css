@@ -1,5 +1,20 @@
-.tmc-pp-start-course-btn.yt-spec-button-shape-next {
+.tmc-pp-start-course-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 36px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
     margin-top: 10px;
+    background-color: #fff;
+    color: #000;
+}
+
+.tmc-pp-start-course-btn:hover {
+    opacity: 0.9;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .tmc-pp-progress-div {
@@ -24,8 +39,7 @@
 }
 .tmc-pp-progress-div .tmc-total,
 .tmc-pp-progress-div .tmc-watched,
-.tmc-pp-progress-div .tmc-duration,
-.tmc-pp-progress-div .tmc-delete {
+.tmc-pp-progress-div .tmc-duration {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -39,19 +53,32 @@
     padding: 6px 12px;
     border-radius: 8px;
 }
-.tmc-pp-progress-div .tmc-delete {
+.tmc-pp-progress-div .tmc-actions {
     border-radius: 8px 0px 8px 0;
     border-width: 1px 0px 0px 1px;
     border-style: solid;
     border-color: rgba(255, 255, 255, 0.2);
+    color: #f1f1f1;
+    background-color: rgba(255, 255, 255, 0.1);
     position: absolute;
     bottom: 0;
     right: 0;
     z-index: 9;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.tmc-pp-progress-div .tmc-delete:hover {
+.tmc-pp-progress-div .tmc-actions > * {
+    padding: 4px 6px;
+}
+.tmc-pp-progress-div .tmc-actions > *:hover {
     background-color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.tmc-pp-progress-div .tmc-actions > * + * {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tmc-pp-progress-div .tmc-delete-popup {
@@ -103,7 +130,7 @@
     transition: opacity 0.3s ease;
 }
 .tmc-pp-progress-div .tmc-delete-buttons button:hover {
-    opacity: 0.80;
+    opacity: 0.8;
 }
 .tmc-pp-progress-div .tmc-confirm-delete {
     background-color: #31313199;
@@ -112,6 +139,12 @@
 .tmc-pp-progress-div .tmc-cancel-delete {
     background-color: #eee;
     color: #0f0f0f;
+}
+.tmc-refresh > svg.rotating {
+    animation: rotate 0.4s linear;
+}
+.tmc-refresh > svg.scanning {
+    animation: rotate 1s linear infinite;
 }
 
 .tmc-scanning-playlist {
@@ -166,5 +199,11 @@ ytd-item-section-renderer.style-scope.ytd-section-list-renderer #contents {
     }
     to {
         transform: translateY(0);
+    }
+}
+
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
     }
 }
