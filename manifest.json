@@ -27,8 +27,9 @@
     },
     "content_scripts": [
         {
-            "js": ["src/content/content_script.js"],
+            "js": ["src/content/toast.js", "src/content/content_script.js"],
             "css": [
+                "src/styles/toast.css",
                 "src/styles/checkbox.css",
                 "src/styles/playlistPage.css",
                 "src/styles/playlistWatchPage.css"
