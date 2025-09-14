@@ -1,0 +1,11 @@
+{
+    "name": "track-my-course",
+    "version": "1.0.0",
+    "description": "Turn YouTube playlists into courses. Track your playlist with checkmarks, progress bar, total and watched duration, and completion percentage.",
+    "scripts": {
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "prettier": "^3.6.2"
+    }
+}

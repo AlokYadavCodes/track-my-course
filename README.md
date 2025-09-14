@@ -16,15 +16,15 @@ Instead of passively watching videos and forgetting your progress, you can turn 
 
 ## 📚 Table of Contents
 
--   [Why TrackMyCourse?](#why-trackmycourse)
--   [✨ Features](#-features)
--   [🚀 Installation & Usage](#-installation--usage)
--   [🛠️ For Developers](#️-for-developers)
-    -   [Contributing](#contributing)
-    -   [Running Locally](#running-locally)
-    -   [Project Structure](#project-structure)
--   [🔐 Permissions Explained](#-permissions-explained)
--   [📜 License](#-license)
+- [Why TrackMyCourse?](#why-trackmycourse)
+- [✨ Features](#-features)
+- [🚀 Installation & Usage](#-installation--usage)
+- [🛠️ For Developers](#️-for-developers)
+    - [Contributing](#contributing)
+    - [Running Locally](#running-locally)
+    - [Project Structure](#project-structure)
+- [🔐 Permissions Explained](#-permissions-explained)
+- [📜 License](#-license)
 
 ---
 

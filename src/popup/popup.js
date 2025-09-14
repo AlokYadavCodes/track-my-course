@@ -2,20 +2,14 @@ function getCompletedPercentage(course) {
     const { watchedDuration, totalDuration } = course;
     if (
         !totalDuration ||
-        (totalDuration.hours === 0 &&
-            totalDuration.minutes === 0 &&
-            totalDuration.seconds === 0)
+        (totalDuration.hours === 0 && totalDuration.minutes === 0 && totalDuration.seconds === 0)
     ) {
         return 0;
     }
     const watchedSeconds =
-        watchedDuration.hours * 3600 +
-        watchedDuration.minutes * 60 +
-        watchedDuration.seconds;
+        watchedDuration.hours * 3600 + watchedDuration.minutes * 60 + watchedDuration.seconds;
     const totalSeconds =
-        totalDuration.hours * 3600 +
-        totalDuration.minutes * 60 +
-        totalDuration.seconds;
+        totalDuration.hours * 3600 + totalDuration.minutes * 60 + totalDuration.seconds;
     return Math.round((watchedSeconds / totalSeconds) * 100);
 }
 
@@ -53,9 +47,7 @@ async function renderCourses() {
     const completedCoursesEl = document.querySelector(".completed-courses");
 
     const welcomeMessageEl = document.getElementById("welcome-message");
-    const courseListsContainerEl = document.getElementById(
-        "course-lists-container"
-    );
+    const courseListsContainerEl = document.getElementById("course-lists-container");
 
     inProgressCoursesEl.innerHTML = "";
     completedCoursesEl.innerHTML = "";
@@ -116,14 +108,10 @@ async function renderCourses() {
     }
 
     if (inProgressCoursesCount === 0) {
-        inProgressCoursesEl.appendChild(
-            createNoCourseElement(NO_COURSES_IN_PROGRESS)
-        );
+        inProgressCoursesEl.appendChild(createNoCourseElement(NO_COURSES_IN_PROGRESS));
     }
     if (completedCoursesCount === 0) {
-        completedCoursesEl.appendChild(
-            createNoCourseElement(NO_COURSES_COMPLETED)
-        );
+        completedCoursesEl.appendChild(createNoCourseElement(NO_COURSES_COMPLETED));
     }
     updateCoursesCount();
 }
@@ -149,26 +137,21 @@ function addClickListeners() {
         } else if (target.closest(".cancel-delete-btn")) {
             course.classList.remove("deleting");
         } else if (target.closest(".confirm-delete-btn")) {
-            const isCompleted =
-                course.parentElement.classList.contains("completed-courses");
+            const isCompleted = course.parentElement.classList.contains("completed-courses");
 
             if (isCompleted) {
                 completedCoursesCount--;
                 if (completedCoursesCount === 0) {
                     document
                         .querySelector(".completed-courses")
-                        .appendChild(
-                            createNoCourseElement(NO_COURSES_COMPLETED)
-                        );
+                        .appendChild(createNoCourseElement(NO_COURSES_COMPLETED));
                 }
             } else {
                 inProgressCoursesCount--;
                 if (inProgressCoursesCount === 0) {
                     document
                         .querySelector(".in-progress-courses")
-                        .appendChild(
-                            createNoCourseElement(NO_COURSES_IN_PROGRESS)
-                        );
+                        .appendChild(createNoCourseElement(NO_COURSES_IN_PROGRESS));
                 }
             }
             updateCoursesCount();

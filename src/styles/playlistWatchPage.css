@@ -25,7 +25,7 @@
     --confirm-delete-text: #0f0f0f;
     --cancel-delete-bg: #0f0f0f;
     --cancel-delete-text: #f1f1f1;
-    --popup-button-border: #88888833,
+    --popup-button-border: #88888833;
 }
 
 html[dark] {
@@ -55,8 +55,7 @@ html[dark] {
     --confirm-delete-text: #f1f1f1;
     --cancel-delete-bg: #f1f1f1;
     --cancel-delete-text: #0f0f0f;
-    --popup-button-border: #cccccc33,
-
+    --popup-button-border: #cccccc33;
 }
 
 .tmc-wp-start-course-btn {
@@ -147,7 +146,7 @@ html[dark] {
 }
 
 /* progress div styling */
-.tmc-wp-progress-div{
+.tmc-wp-progress-div {
     position: relative;
 }
 .tmc-wp-progress-div .progress-content-wrapper {
@@ -275,7 +274,7 @@ html[dark] {
     transition: opacity 0.3s ease;
 }
 .tmc-wp-progress-div .tmc-delete-buttons button:hover {
-    opacity: 0.80;
+    opacity: 0.8;
 }
 .tmc-wp-progress-div .tmc-confirm-delete {
     background-color: var(--confirm-delete-bg);
@@ -285,4 +284,3 @@ html[dark] {
     background-color: var(--cancel-delete-bg);
     color: var(--cancel-delete-text);
 }
-

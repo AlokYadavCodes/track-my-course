@@ -13,26 +13,21 @@ const SELECTORS = {
     playlistPage: {
         startCourseBtnWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info:has(yt-description-preview-view-model)",
-        startCourseBtnSmallScreenRefEl:
-            "ytd-tabbed-page-header yt-flexible-actions-view-model",
+        startCourseBtnSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
         contentDiv: "#contents:has(>ytd-playlist-video-renderer)",
         progressDivWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info:has(yt-description-preview-view-model)",
-        progressDivSmallScreenRefEl:
-            "ytd-tabbed-page-header yt-flexible-actions-view-model",
+        progressDivSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
         courseTextEl: ".metadata-action-bar p",
-        playlistTextEl:
-            ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
+        playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
         playlistNameEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model span",
 
         ytCourse: {
             startCourseBtnWideScreenRefEl: ".play-menu.wide-screen-form",
             startCourseBtnSmallScreenRefEl: ".play-menu.small-screen-form",
-            progressDivWideScreenRefEl:
-                ".metadata-wrapper > .metadata-action-bar",
-            progressDivSmallScreenRefEl:
-                ".metadata-wrapper > .metadata-action-bar",
+            progressDivWideScreenRefEl: ".metadata-wrapper > .metadata-action-bar",
+            progressDivSmallScreenRefEl: ".metadata-wrapper > .metadata-action-bar",
             playlistNameEl:
                 ".metadata-wrapper > yt-dynamic-sizing-formatted-string #container yt-formatted-string",
         },
@@ -69,8 +64,7 @@ async function updateStateVariables({ signal }) {
     state.playlistId = getPlaylistId(window.location.href);
 
     const defaultDuration = { hours: 0, minutes: 0, seconds: 0 };
-    const storageData =
-        (await getFromStorage(state.playlistId))[state.playlistId] ?? {};
+    const storageData = (await getFromStorage(state.playlistId))[state.playlistId] ?? {};
 
     state.videoWatchStatus = storageData.videoWatchStatus ?? {};
     state.totalDuration = storageData.totalDuration ?? {
@@ -109,15 +103,11 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         performCleanUp();
 
         // Decide which update function to call based on the page type.
-        const updateFunction =
-            pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
+        const updateFunction = pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
         await updateFunction({ signal });
     } catch (err) {
         if (err.name !== "AbortError") {
-            console.error(
-                `Unexpected error during full update of ${pageType} page:`,
-                err
-            );
+            console.error(`Unexpected error during full update of ${pageType} page:`, err);
         }
     }
 }
@@ -160,8 +150,7 @@ async function updateWatchPage({ signal }) {
         await renderWPVideoCheckboxes({ signal });
 
         // Start tracking time
-        if (state.investedTimeTrackerCleanup)
-            state.investedTimeTrackerCleanup();
+        if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
         state.investedTimeTrackerCleanup = initializeInvestedTimeTracker({
             signal,
         });
@@ -186,8 +175,7 @@ async function updatePlaylistPage({ signal }) {
 
     if (!state.mediaQuery) {
         state.mediaQuery = window.matchMedia("(min-width: 1080px)");
-        state.PPPlacementHandler = () =>
-            updatePlaylistPageLayout(state.mediaQuery);
+        state.PPPlacementHandler = () => updatePlaylistPageLayout(state.mediaQuery);
         state.mediaQuery.addEventListener("change", state.PPPlacementHandler);
     }
 
@@ -209,17 +197,13 @@ async function updatePlaylistPage({ signal }) {
 
 // Runs whenever there is a navigation (background script sends message and it acts accordingly)
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    if (
-        !(request.action === "updateWatchPage") &&
-        state.investedTimeTrackerCleanup
-    ) {
+    if (!(request.action === "updateWatchPage") && state.investedTimeTrackerCleanup) {
         state.investedTimeTrackerCleanup();
     }
 
     if (request.action === "updateWatchPage") {
         const isNewPlaylist =
-            !(state.currentPage === PAGE_TYPE.WATCH) ||
-            state.playlistId !== request.playlistId;
+            !(state.currentPage === PAGE_TYPE.WATCH) || state.playlistId !== request.playlistId;
 
         await waitForNavigation();
         if (isNewPlaylist) {
@@ -232,8 +216,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         state.currentPage = PAGE_TYPE.WATCH;
     } else if (request.action === "updatePlaylistPage") {
         const isNewPlaylist =
-            !(state.currentPage === PAGE_TYPE.PLAYLIST) ||
-            state.playlistId !== request.playlistId;
+            !(state.currentPage === PAGE_TYPE.PLAYLIST) || state.playlistId !== request.playlistId;
 
         if (isNewPlaylist) {
             await waitForNavigation();
@@ -285,10 +268,7 @@ async function renderWPStartCourseBtn({ signal }) {
 
     const startCourseBtn = document.createElement("button");
     startCourseBtn.textContent = "Start Course";
-    startCourseBtn.classList.add(
-        "tmc-start-course-btn",
-        "tmc-wp-start-course-btn"
-    );
+    startCourseBtn.classList.add("tmc-start-course-btn", "tmc-wp-start-course-btn");
     if (signal.aborted) throw createAbortError();
     menu.appendChild(startCourseBtn);
 
@@ -306,9 +286,7 @@ async function renderWPStartCourseBtn({ signal }) {
             state.watchedDuration = { hours: 0, minutes: 0, seconds: 0 }; // Reset
             state.investedTime = { hours: 0, minutes: 0, seconds: 0 }; // Reset
 
-            state.courseImgSrc = await imgSrcToBase64(
-                playlistItems.querySelector("img")?.src
-            );
+            state.courseImgSrc = await imgSrcToBase64(playlistItems.querySelector("img")?.src);
             state.courseName = document.querySelector(
                 "#playlist:not([hidden]) #header-contents .title"
             ).title;
@@ -327,8 +305,7 @@ async function renderPPStartCourseBtn({ signal }) {
     let startCourseBtnWideScreenRefEl;
     if (state.isYtCourse) {
         startCourseBtnWideScreenRefEl = await waitForElement({
-            selector:
-                SELECTORS.playlistPage.ytCourse.startCourseBtnWideScreenRefEl,
+            selector: SELECTORS.playlistPage.ytCourse.startCourseBtnWideScreenRefEl,
             signal,
         });
     } else {
@@ -342,10 +319,7 @@ async function renderPPStartCourseBtn({ signal }) {
     startCourseBtn.textContent = "Start Course";
     startCourseBtn.className = "tmc-start-course-btn tmc-pp-start-course-btn";
 
-    startCourseBtnWideScreenRefEl.insertAdjacentElement(
-        "afterend",
-        startCourseBtn
-    );
+    startCourseBtnWideScreenRefEl.insertAdjacentElement("afterend", startCourseBtn);
 
     if (state.isYtCourse) {
         startCourseBtn.style.margin = "-6px 0px 10px 0px";
@@ -388,9 +362,7 @@ async function renderWPVideoCheckboxes({ signal }) {
     const playlistVideos = playlistItems.children;
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
-        if (
-            video.tagName.toLowerCase() === "ytd-playlist-panel-video-renderer"
-        ) {
+        if (video.tagName.toLowerCase() === "ytd-playlist-panel-video-renderer") {
             if (video.querySelector(".tmc-wp-checkbox-wrapper")) continue;
             setupCheckbox(video, PAGE_TYPE.WATCH);
         }
@@ -415,17 +387,11 @@ async function renderPPVideoCheckboxes({ signal }) {
                 playlistVideos = [];
                 for (const mutation of mutationList) {
                     if (mutation.addedNodes.length > 0) {
-                        playlistVideos = [
-                            ...playlistVideos,
-                            ...mutation.addedNodes,
-                        ];
+                        playlistVideos = [...playlistVideos, ...mutation.addedNodes];
                     }
                 }
                 for (const video of playlistVideos) {
-                    if (
-                        video.tagName.toLowerCase() ===
-                        "ytd-playlist-video-renderer"
-                    ) {
+                    if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
                         setupCheckbox(video, PAGE_TYPE.PLAYLIST);
                     } else {
                         observer.observe(contentDiv, config);
@@ -461,9 +427,7 @@ function setupCheckbox(video, pageType) {
         state.videoWatchStatus[videoId] = e.target.checked;
         let videoDuration;
         if (video.querySelector(SELECTORS.videoDuration)) {
-            videoDuration = video.querySelector(
-                SELECTORS.videoDuration
-            ).textContent;
+            videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
         } else {
             videoDuration = (
                 await waitForElement({
@@ -498,11 +462,10 @@ async function renderWPProgressDiv({ signal }) {
                         <path d="M8.5 12.5L11 15l5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span><span id="watched-videos-count">${
-                        Object.values(state.videoWatchStatus).filter((s) => s)
-                            .length
+                        Object.values(state.videoWatchStatus).filter((s) => s).length
                     }</span>/<span id="total-videos-count">${
-        Object.keys(state.videoWatchStatus).length
-    }</span> watched</span>
+                        Object.keys(state.videoWatchStatus).length
+                    }</span> watched</span>
                 </div>
                 <div id="total-time">${`${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`}</div>
             </div>
@@ -592,8 +555,8 @@ async function renderPPProgressDiv({ signal }) {
                     <line x1="12" y1="12" x2="15" y2="12" stroke-linecap="round"></line>
                 </svg>
                 <span class="tmc-duration-text">${state.totalDuration.hours}h ${
-        state.totalDuration.minutes
-    }m ${state.totalDuration.seconds}s</span>
+                    state.totalDuration.minutes
+                }m ${state.totalDuration.seconds}s</span>
             </div>
             <div class="tmc-watched">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -601,8 +564,7 @@ async function renderPPProgressDiv({ signal }) {
                     <path d="M8.5 12.5L11 15l5-5.5" stroke-linecap="round" stroke-linejoin="round"></path>
                 </svg>
                 <span class="tmc-watched-text">${
-                    Object.values(state.videoWatchStatus).filter((s) => s)
-                        .length
+                    Object.values(state.videoWatchStatus).filter((s) => s).length
                 } / ${Object.keys(state.videoWatchStatus).length} watched</span>
             </div>
             <div class="tmc-actions">
@@ -661,8 +623,7 @@ async function renderPPProgressDiv({ signal }) {
     let progressDivWideScreenRefEl;
     if (state.isYtCourse) {
         progressDivWideScreenRefEl = await waitForElement({
-            selector:
-                SELECTORS.playlistPage.ytCourse.progressDivWideScreenRefEl,
+            selector: SELECTORS.playlistPage.ytCourse.progressDivWideScreenRefEl,
             signal,
         });
     } else {
@@ -672,10 +633,7 @@ async function renderPPProgressDiv({ signal }) {
         });
     }
 
-    progressDivWideScreenRefEl.insertAdjacentElement(
-        "beforebegin",
-        progressDiv
-    );
+    progressDivWideScreenRefEl.insertAdjacentElement("beforebegin", progressDiv);
 }
 
 async function renderPlaylistScanning({ signal }) {
@@ -745,19 +703,17 @@ function refreshWatchPageUI({ signal }) {
     if (!progressDiv) return; // Exit if the UI isn't rendered
 
     // Update time displays
-    progressDiv.querySelector(
-        "#watched-time"
-    ).textContent = `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
-    progressDiv.querySelector(
-        "#total-time"
-    ).textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
-    progressDiv.querySelector(
-        "#invested-time"
-    ).textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
+    progressDiv.querySelector("#watched-time").textContent =
+        `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
+    progressDiv.querySelector("#total-time").textContent =
+        `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+    progressDiv.querySelector("#invested-time").textContent =
+        `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
 
     if (signal.aborted) return;
-    progressDiv.querySelector("#watched-videos-count").textContent =
-        Object.values(state.videoWatchStatus).filter(Boolean).length;
+    progressDiv.querySelector("#watched-videos-count").textContent = Object.values(
+        state.videoWatchStatus
+    ).filter(Boolean).length;
     progressDiv.querySelector("#total-videos-count").textContent = Object.keys(
         state.videoWatchStatus
     ).length;
@@ -780,9 +736,8 @@ function refreshPlaylistPageUI({ signal }) {
         Object.keys(state.videoWatchStatus).length
     } videos`;
 
-    progressDiv.querySelector(
-        ".tmc-duration-text"
-    ).textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+    progressDiv.querySelector(".tmc-duration-text").textContent =
+        `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
 
     progressDiv.querySelector(".tmc-watched-text").textContent = `${
         Object.values(state.videoWatchStatus).filter(Boolean).length
@@ -794,13 +749,9 @@ function refreshPlaylistPageUI({ signal }) {
 function updateVideoCheckboxes(page) {
     let allCheckboxesWrapper;
     if (page === PAGE_TYPE.WATCH) {
-        allCheckboxesWrapper = document.querySelectorAll(
-            ".tmc-wp-checkbox-wrapper"
-        );
+        allCheckboxesWrapper = document.querySelectorAll(".tmc-wp-checkbox-wrapper");
     } else if (page === PAGE_TYPE.PLAYLIST) {
-        allCheckboxesWrapper = document.querySelectorAll(
-            ".tmc-pp-checkbox-wrapper"
-        );
+        allCheckboxesWrapper = document.querySelectorAll(".tmc-pp-checkbox-wrapper");
     }
     if (allCheckboxesWrapper && allCheckboxesWrapper.length === 0) return;
     for (const checkboxWrapper of allCheckboxesWrapper) {
@@ -823,54 +774,43 @@ async function updatePlaylistPageLayout(mediaQuery) {
     const signal = state.activePageUpdateController.signal;
     if (state.isYtCourse) {
         progressDivWideScreenRefEl = await waitForElement({
-            selector:
-                SELECTORS.playlistPage.ytCourse.progressDivWideScreenRefEl,
+            selector: SELECTORS.playlistPage.ytCourse.progressDivWideScreenRefEl,
             signal,
         });
         progressDivSmallScreenRefEl = progressDivWideScreenRefEl;
 
-        [startCourseBtnWideScreenRefEl, startCourseBtnSmallScreenRefEl] =
-            await Promise.all([
-                waitForElement({
-                    selector:
-                        SELECTORS.playlistPage.ytCourse
-                            .startCourseBtnWideScreenRefEl,
-                    signal,
-                }),
-                waitForElement({
-                    selector:
-                        SELECTORS.playlistPage.ytCourse
-                            .startCourseBtnSmallScreenRefEl,
-                    signal,
-                }),
-            ]);
+        [startCourseBtnWideScreenRefEl, startCourseBtnSmallScreenRefEl] = await Promise.all([
+            waitForElement({
+                selector: SELECTORS.playlistPage.ytCourse.startCourseBtnWideScreenRefEl,
+                signal,
+            }),
+            waitForElement({
+                selector: SELECTORS.playlistPage.ytCourse.startCourseBtnSmallScreenRefEl,
+                signal,
+            }),
+        ]);
     } else {
-        [progressDivWideScreenRefEl, progressDivSmallScreenRefEl] =
-            await Promise.all([
-                waitForElement({
-                    selector: SELECTORS.playlistPage.progressDivWideScreenRefEl,
-                    signal,
-                }),
-                waitForElement({
-                    selector:
-                        SELECTORS.playlistPage.progressDivSmallScreenRefEl,
-                    signal,
-                }),
-            ]);
+        [progressDivWideScreenRefEl, progressDivSmallScreenRefEl] = await Promise.all([
+            waitForElement({
+                selector: SELECTORS.playlistPage.progressDivWideScreenRefEl,
+                signal,
+            }),
+            waitForElement({
+                selector: SELECTORS.playlistPage.progressDivSmallScreenRefEl,
+                signal,
+            }),
+        ]);
 
-        [startCourseBtnWideScreenRefEl, startCourseBtnSmallScreenRefEl] =
-            await Promise.all([
-                waitForElement({
-                    selector:
-                        SELECTORS.playlistPage.startCourseBtnWideScreenRefEl,
-                    signal,
-                }),
-                waitForElement({
-                    selector:
-                        SELECTORS.playlistPage.startCourseBtnSmallScreenRefEl,
-                    signal,
-                }),
-            ]);
+        [startCourseBtnWideScreenRefEl, startCourseBtnSmallScreenRefEl] = await Promise.all([
+            waitForElement({
+                selector: SELECTORS.playlistPage.startCourseBtnWideScreenRefEl,
+                signal,
+            }),
+            waitForElement({
+                selector: SELECTORS.playlistPage.startCourseBtnSmallScreenRefEl,
+                signal,
+            }),
+        ]);
     }
 
     // Determine the correct target based on screen size
@@ -883,16 +823,10 @@ async function updatePlaylistPageLayout(mediaQuery) {
         : startCourseBtnSmallScreenRefEl;
 
     if (progressDiv) {
-        progressDivTargetAnchor.insertAdjacentElement(
-            "beforebegin",
-            progressDiv
-        );
+        progressDivTargetAnchor.insertAdjacentElement("beforebegin", progressDiv);
     }
     if (startCourseBtn) {
-        startCourseBtnTargetAnchor.insertAdjacentElement(
-            "afterend",
-            startCourseBtn
-        );
+        startCourseBtnTargetAnchor.insertAdjacentElement("afterend", startCourseBtn);
     }
 }
 
@@ -919,9 +853,7 @@ function removeWPProgressDiv() {
         progressDiv.remove();
     }
 
-    const headerContents = document.querySelector(
-        SELECTORS.watchPage.headerContents
-    );
+    const headerContents = document.querySelector(SELECTORS.watchPage.headerContents);
     if (headerContents && state.playlistActions) {
         headerContents.appendChild(state.playlistActions);
     }
@@ -941,12 +873,9 @@ function removeProgressDiv() {
         progressDiv.remove();
     }
 
-    const headerContents = document.querySelector(
-        SELECTORS.watchPage.headerContents
-    );
+    const headerContents = document.querySelector(SELECTORS.watchPage.headerContents);
 
-    if (headerContents && state.playlistActions)
-        headerContents.appendChild(state.playlistActions);
+    if (headerContents && state.playlistActions) headerContents.appendChild(state.playlistActions);
 }
 
 function removeWPVideoCheckboxes() {
@@ -1029,15 +958,10 @@ function createAbortError() {
 
 function waitForNavigation() {
     return new Promise((resolve) => {
-        const navProgress = document.querySelector(
-            SELECTORS.ytNavigationProgress
-        );
+        const navProgress = document.querySelector(SELECTORS.ytNavigationProgress);
 
         // If there's no progress bar, navigation is instant or already done.
-        if (
-            !navProgress ||
-            navProgress.getAttribute("aria-valuenow") === "100"
-        ) {
+        if (!navProgress || navProgress.getAttribute("aria-valuenow") === "100") {
             return resolve();
         }
 
@@ -1071,10 +995,7 @@ function waitForElement({ selector, signal, parentEl = document.body }) {
         const observer = new MutationObserver((mutations, obs) => {
             // Check each mutation for added nodes
             for (const mutation of mutations) {
-                if (
-                    mutation.type === "childList" &&
-                    mutation.addedNodes.length
-                ) {
+                if (mutation.type === "childList" && mutation.addedNodes.length) {
                     const element = parentEl.querySelector(selector);
                     if (element) {
                         obs.disconnect();
@@ -1131,14 +1052,11 @@ async function imgSrcToBase64(imgSrc) {
 
 function addDurationTo(duration, target /* "watched" | "total" */) {
     if (target !== "watched" && target !== "total") {
-        throw new Error(
-            `Invalid target: ${target}. Must be "watched" or "total"`
-        );
+        throw new Error(`Invalid target: ${target}. Must be "watched" or "total"`);
     }
     const secondsToAdd = parseDurationToSeconds(duration);
     let bucket = state[`${target}Duration`];
-    let totalSeconds =
-        bucket.hours * 3600 + bucket.minutes * 60 + bucket.seconds;
+    let totalSeconds = bucket.hours * 3600 + bucket.minutes * 60 + bucket.seconds;
     totalSeconds += secondsToAdd;
 
     // Normalize back to h:m:s
@@ -1183,8 +1101,7 @@ async function scanPlaylistForCourseData({ videoElements, signal }) {
             totalSeconds += parseDurationToSeconds(durationEl.textContent);
 
             const linkEl =
-                video.querySelector("#wc-endpoint") ||
-                video.querySelector("#video-title");
+                video.querySelector("#wc-endpoint") || video.querySelector("#video-title");
             if (linkEl) {
                 const videoId = getVideoId(linkEl.href);
                 if (videoId) {
@@ -1230,9 +1147,7 @@ async function updatePlaylistData() {
             if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
                 let videoDuration;
                 if (video.querySelector(SELECTORS.videoDuration)) {
-                    videoDuration = video.querySelector(
-                        SELECTORS.videoDuration
-                    ).textContent;
+                    videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
                 } else {
                     videoDuration = (
                         await waitForElement({
@@ -1245,20 +1160,14 @@ async function updatePlaylistData() {
                 addDurationTo(videoDuration, "total");
                 const url = video.querySelector("#video-title").href;
                 const videoId = getVideoId(url);
-                videoWatchStatus[videoId] =
-                    state.videoWatchStatus[videoId] ?? false;
+                videoWatchStatus[videoId] = state.videoWatchStatus[videoId] ?? false;
                 if (videoWatchStatus[videoId] === true) {
                     addDurationTo(videoDuration, "watched");
                 }
-                const scannedVideoCountEl = document.querySelector(
-                    "#scanned-videos-count"
-                );
+                const scannedVideoCountEl = document.querySelector("#scanned-videos-count");
                 if (scannedVideoCountEl)
-                    scannedVideoCountEl.textContent =
-                        Object.keys(videoWatchStatus).length;
-            } else if (
-                video.tagName.toLowerCase() === "ytd-continuation-item-renderer"
-            ) {
+                    scannedVideoCountEl.textContent = Object.keys(videoWatchStatus).length;
+            } else if (video.tagName.toLowerCase() === "ytd-continuation-item-renderer") {
                 if (!isScanning) renderPlaylistScanning({ signal });
                 isScanning = true;
                 isThereMoreVideos = true;
@@ -1371,18 +1280,14 @@ async function getMoreVideos({ signal }) {
 
 async function checkIsYtCourse({ signal }) {
     const performCheck = () => {
-        const courseTextEl = document.querySelectorAll(
-            SELECTORS.playlistPage.courseTextEl
-        );
+        const courseTextEl = document.querySelectorAll(SELECTORS.playlistPage.courseTextEl);
         for (el of courseTextEl) {
             if (el?.textContent.toLowerCase() === "course") {
                 return { found: true, isCourse: true };
             }
         }
 
-        const playlistTextEl = document.querySelectorAll(
-            SELECTORS.playlistPage.playlistTextEl
-        );
+        const playlistTextEl = document.querySelectorAll(SELECTORS.playlistPage.playlistTextEl);
         for (el of playlistTextEl) {
             if (
                 el?.textContent.toLowerCase() === "playlist" ||
@@ -1483,10 +1388,7 @@ function initializeInvestedTimeTracker({ signal }) {
             clearInterval(intervalId);
             intervalId = null;
         }
-        document.removeEventListener(
-            "visibilitychange",
-            visibilitychangeListener
-        );
+        document.removeEventListener("visibilitychange", visibilitychangeListener);
         state.investedTimeTrackerCleanup = null;
     }
     return cleanup;
@@ -1494,10 +1396,7 @@ function initializeInvestedTimeTracker({ signal }) {
 
 function removePPMediaQueryListener() {
     if (state.mediaQuery && state.PPProgressDivPlacementHandler) {
-        state.mediaQuery.removeEventListener(
-            "change",
-            state.PPProgressDivPlacementHandler
-        );
+        state.mediaQuery.removeEventListener("change", state.PPProgressDivPlacementHandler);
         state.mediaQuery = null;
         state.PPProgressDivPlacementHandler = null;
     }
@@ -1511,44 +1410,29 @@ function getCheckboxWrapper(page) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 35.6 35.6");
 
-    const background = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-    );
+    const background = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     background.setAttribute("class", "background");
     background.setAttribute("cx", "17.8");
     background.setAttribute("cy", "17.8");
     background.setAttribute("r", "17.8");
 
-    const ring = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-    );
+    const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     ring.setAttribute("class", "ring");
     ring.setAttribute("cx", "17.8");
     ring.setAttribute("cy", "17.8");
     ring.setAttribute("r", "12.37"); // Matches stroke
 
-    const stroke = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "circle"
-    );
+    const stroke = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     stroke.setAttribute("class", "stroke");
     stroke.setAttribute("cx", "17.8");
     stroke.setAttribute("cy", "17.8");
     stroke.setAttribute("r", "14.37");
 
-    const check = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "polyline"
-    );
+    const check = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     check.setAttribute("class", "check");
     check.setAttribute("points", "11.78 18.12 15.55 22.23 25.17 12.87");
 
-    const hoverTick = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "polyline"
-    );
+    const hoverTick = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
     hoverTick.setAttribute("class", "hover-tick");
     hoverTick.setAttribute("points", "13.5 18 16.5 21 23.5 14");
 
@@ -1556,15 +1440,9 @@ function getCheckboxWrapper(page) {
 
     const wrapper = document.createElement("div");
     if (page === "watch") {
-        wrapper.classList.add(
-            "tmc-checkbox-wrapper",
-            "tmc-wp-checkbox-wrapper"
-        );
+        wrapper.classList.add("tmc-checkbox-wrapper", "tmc-wp-checkbox-wrapper");
     } else if (page === "playlist") {
-        wrapper.classList.add(
-            "tmc-checkbox-wrapper",
-            "tmc-pp-checkbox-wrapper"
-        );
+        wrapper.classList.add("tmc-checkbox-wrapper", "tmc-pp-checkbox-wrapper");
     }
     wrapper.append(checkbox, svg);
     return wrapper;
