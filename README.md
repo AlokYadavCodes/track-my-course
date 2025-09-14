@@ -2,7 +2,7 @@
 
 Turn YouTube playlists into courses. Track your playlist with checkmarks, progress bar, total and watched duration, and completion percentage.
 
-![TrackMyCourse Banner](https://github.com/user-attachments/assets/642a93bb-9c8d-4e76-b452-537426eb9428)  
+![TrackMyCourse Banner](https://github.com/user-attachments/assets/df794c84-7b5d-4db0-bba1-fad103dc5752)  
 [![Get it on Chrome Web Store](https://img.shields.io/chrome-web-store/v/eojbembojnleniamokihimgjikmpahin?label=Chrome%20Web%20Store&logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin)
 [![Star on GitHub](https://img.shields.io/github/stars/AlokYadavCodes/track-my-course?style=social)](https://github.com/AlokYadavCodes/track-my-course/stargazers)
 
@@ -41,11 +41,11 @@ _Ready to use TrackMyCourse?_ [Install now](https://chromewebstore.google.com/de
 
 ## ✨ Features
 
--   📊 **Visual Progress Bar** – Instantly see how much of a playlist you’ve completed.
--   ✅ **Video Checkmarks** – Mark videos as finished to keep your learning on track.
--   ⏱️ **Duration Tracking** – Know your watched and total time to plan your study sessions better.
--   🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.
--   💾 **Saved Locally** – Your progress stays saved in your browser, no sign-up needed.
+- 📊 **Visual Progress Bar** – Instantly see how much of a playlist you’ve completed.
+- ✅ **Video Checkmarks** – Mark videos as finished to keep your learning on track.
+- ⏱️ **Duration Tracking** – Know your watched and total time to plan your study sessions better.
+- 🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.
+- 💾 **Saved Locally** – Your progress stays saved in your browser, no sign-up needed.
 
 _All features appear seamlessly inside YouTube’s interface._
 
@@ -81,9 +81,13 @@ Follow these steps to set up the project on your local machine.
     ```bash
     git clone https://github.com/AlokYadavCodes/track-my-course.git
     ```
-2.  **Open Chrome Extensions:** Navigate to `chrome://extensions/` in your browser.
-3.  **Enable Developer Mode:** Ensure the **Developer mode** toggle is switched on.
-4.  **Load the extension:** Click **"Load unpacked"** and select the `track-my-course` folder you cloned.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Open Chrome Extensions:** Navigate to `chrome://extensions/` in your browser.
+4.  **Enable Developer Mode:** Ensure the **Developer mode** toggle is switched on.
+5.  **Load the extension:** Click **"Load unpacked"** and select the `track-my-course` folder you cloned.
 
 > **Note:** Changes to the source code will only reflect after you reload the extension on the `chrome://extensions/` page.
 
@@ -91,13 +95,16 @@ Follow these steps to set up the project on your local machine.
 
 ```
 track-my-course/
-├── icons/          # Contains all extension icons.
-├── src/            # Contains the main source code.
-│   ├── background/ # Handles background tasks.
-│   ├── content/    # Injects scripts directly into web pages.
-│   └── popup/      # Code for the extension's popup window.
-├── styles/         # Contains CSS files for UI elements injected onto pages.
-└── manifest.json   # Chrome extension configuration file.
+├── icons/             # Contains all extension icons.
+├── src/               # Contains the main source code.
+│   ├── background/    # Handles background tasks.
+│   ├── content/       # Injects scripts directly into web pages.
+│   ├── popup/         # Code for the extension's popup window.
+│   └── styles/        # Contains CSS files for UI elements injected onto pages.
+├── .prettierrc        # Prettier configuration for consistent formatting
+├── package.json       # Project dependencies and scripts
+├── package-lock.json  # Locked dependency versions
+└── manifest.json      # Chrome extension configuration file.
 ```
 
 ---
