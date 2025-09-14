@@ -340,8 +340,7 @@ async function renderPPStartCourseBtn({ signal }) {
 
     const startCourseBtn = document.createElement("a");
     startCourseBtn.textContent = "Start Course";
-    startCourseBtn.className =
-        "tmc-start-course-btn tmc-pp-start-course-btn";
+    startCourseBtn.className = "tmc-start-course-btn tmc-pp-start-course-btn";
 
     startCourseBtnWideScreenRefEl.insertAdjacentElement(
         "afterend",
@@ -389,41 +388,11 @@ async function renderWPVideoCheckboxes({ signal }) {
     const playlistVideos = playlistItems.children;
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
-        if (video.tagName === "YTD-PLAYLIST-PANEL-VIDEO-RENDERER") {
+        if (
+            video.tagName.toLowerCase() === "ytd-playlist-panel-video-renderer"
+        ) {
             if (video.querySelector(".tmc-wp-checkbox-wrapper")) continue;
-            const checkboxWrapper = getCheckboxWrapper(PAGE_TYPE.WATCH);
-            const checkbox = checkboxWrapper.querySelector(
-                "input[type=checkbox]"
-            );
-            const url = video.querySelector("#wc-endpoint").href;
-            const videoId = getVideoId(url);
-            checkbox.id = videoId;
-            checkbox.checked = state.videoWatchStatus[videoId] ?? false;
-
-            checkbox.addEventListener("click", async (e) => {
-                state.videoWatchStatus[videoId] = e.target.checked;
-                let videoDuration;
-                if (video.querySelector(SELECTORS.videoDuration)) {
-                    videoDuration = video.querySelector(
-                        SELECTORS.videoDuration
-                    ).textContent;
-                } else {
-                    videoDuration = (
-                        await waitForElement({
-                            selector: SELECTORS.videoDuration,
-                            parentEl: video,
-                            signal,
-                        })
-                    ).textContent;
-                }
-
-                if (e.target.checked) addDurationTo(videoDuration, "watched");
-                else removeFromWatchDuration(videoDuration);
-                setToStorage();
-            });
-
-            const menu = video.querySelector("#menu");
-            menu.appendChild(checkboxWrapper);
+            setupCheckbox(video, PAGE_TYPE.WATCH);
         }
     }
 }
@@ -437,29 +406,8 @@ async function renderPPVideoCheckboxes({ signal }) {
     let playlistVideos = contentDiv.children;
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
-        if (video.tagName === "YTD-PLAYLIST-VIDEO-RENDERER") {
-            const checkboxWrapper = getCheckboxWrapper(PAGE_TYPE.PLAYLIST);
-            const checkbox = checkboxWrapper.querySelector(
-                "input[type=checkbox]"
-            );
-            const url = video.querySelector("#video-title").href;
-            const videoId = getVideoId(url);
-            checkbox.id = videoId;
-            checkbox.checked = state.videoWatchStatus[videoId] ?? false;
-
-            checkbox.addEventListener("click", async (e) => {
-                state.videoWatchStatus[videoId] = e.target.checked;
-                const videoDuration = video.querySelector(
-                    SELECTORS.videoDuration
-                ).textContent;
-
-                if (e.target.checked) addDurationTo(videoDuration, "watched");
-                else removeFromWatchDuration(videoDuration);
-                setToStorage();
-            });
-
-            const menu = video.querySelector("#menu");
-            menu.appendChild(checkboxWrapper);
+        if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
+            setupCheckbox(video, PAGE_TYPE.PLAYLIST);
         } else {
             const config = { childList: true };
             const callback = (mutationList, observer) => {
@@ -474,34 +422,11 @@ async function renderPPVideoCheckboxes({ signal }) {
                     }
                 }
                 for (const video of playlistVideos) {
-                    if (video.tagName === "YTD-PLAYLIST-VIDEO-RENDERER") {
-                        const checkboxWrapper = getCheckboxWrapper(
-                            PAGE_TYPE.PLAYLIST
-                        );
-                        const checkbox = checkboxWrapper.querySelector(
-                            "input[type=checkbox]"
-                        );
-                        const url = video.querySelector("#video-title").href;
-                        const videoId = getVideoId(url);
-                        checkbox.id = videoId;
-                        checkbox.checked =
-                            state.videoWatchStatus[videoId] ?? false;
-
-                        checkbox.addEventListener("click", async (e) => {
-                            state.videoWatchStatus[videoId] = e.target.checked;
-                            setToStorage();
-                            const videoDuration = video.querySelector(
-                                SELECTORS.videoDuration
-                            ).textContent;
-
-                            if (e.target.checked)
-                                addDurationTo(videoDuration, "watched");
-                            else removeFromWatchDuration(videoDuration);
-                            setToStorage();
-                        });
-
-                        const menu = video.querySelector("#menu");
-                        menu.appendChild(checkboxWrapper);
+                    if (
+                        video.tagName.toLowerCase() ===
+                        "ytd-playlist-video-renderer"
+                    ) {
+                        setupCheckbox(video, PAGE_TYPE.PLAYLIST);
                     } else {
                         observer.observe(contentDiv, config);
                     }
@@ -517,6 +442,45 @@ async function renderPPVideoCheckboxes({ signal }) {
             }
         }
     }
+}
+
+function setupCheckbox(video, pageType) {
+    if (pageType !== PAGE_TYPE.PLAYLIST && pageType !== PAGE_TYPE.WATCH) {
+        throw new Error("Invalid page type for checkbox setup");
+    }
+    const checkboxWrapper = getCheckboxWrapper(pageType);
+    const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
+    const url = video.querySelector(
+        `${pageType === PAGE_TYPE.PLAYLIST ? "#video-title" : "#wc-endpoint"}`
+    ).href;
+    const videoId = getVideoId(url);
+    checkbox.id = videoId;
+    checkbox.checked = state.videoWatchStatus[videoId] ?? false;
+
+    checkbox.addEventListener("click", async (e) => {
+        state.videoWatchStatus[videoId] = e.target.checked;
+        let videoDuration;
+        if (video.querySelector(SELECTORS.videoDuration)) {
+            videoDuration = video.querySelector(
+                SELECTORS.videoDuration
+            ).textContent;
+        } else {
+            videoDuration = (
+                await waitForElement({
+                    selector: SELECTORS.videoDuration,
+                    parentEl: video,
+                    signal,
+                })
+            ).textContent;
+        }
+
+        if (e.target.checked) addDurationTo(videoDuration, "watched");
+        else removeFromWatchDuration(videoDuration);
+        setToStorage();
+    });
+
+    const menu = video.querySelector("#menu");
+    menu.appendChild(checkboxWrapper);
 }
 
 async function renderWPProgressDiv({ signal }) {
