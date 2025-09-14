@@ -1,0 +1,42 @@
+.tmc-toast {
+    box-sizing: border-box;
+    padding: 0 24px;
+    min-width: 200px;
+    height: 48px;
+    border-radius: 8px;
+
+    font-family: "Roboto", "Arial", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f1f1f1;
+    color: #000;
+
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 9999;
+    animation: slideIn 0.2s forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(50px);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+}
