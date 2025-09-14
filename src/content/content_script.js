@@ -291,6 +291,7 @@ async function renderWPStartCourseBtn({ signal }) {
                 "#playlist:not([hidden]) #header-contents .title"
             ).title;
             setToStorage();
+            showToast("Course Started");
         } catch (err) {
             if (err.name !== "AbortError") {
                 console.error("Unexpected error during starting course:", err);
@@ -328,7 +329,10 @@ async function renderPPStartCourseBtn({ signal }) {
     }
 
     if (signal.aborted) throw createAbortError();
-    startCourseBtn.addEventListener("click", updatePlaylistData);
+    startCourseBtn.addEventListener("click", async () => {
+        await updatePlaylistData();
+        showToast("Course Started");
+    });
 }
 
 async function renderDisabledStartCourseBtn({ signal }) {
@@ -530,6 +534,7 @@ async function renderWPProgressDiv({ signal }) {
             state.investedTimeTrackerCleanup();
         }
         await chrome.storage.local.remove(state.playlistId);
+        showToast("Course Removed");
     });
 }
 
@@ -568,7 +573,7 @@ async function renderPPProgressDiv({ signal }) {
                 } / ${Object.keys(state.videoWatchStatus).length} watched</span>
             </div>
             <div class="tmc-actions">
-                <div class="tmc-refresh" title="Refresh Playlist">
+                <div class="tmc-refresh" title="Update Playlist">
                     <svg class="tmc-refresh-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
                     </svg>
@@ -593,7 +598,7 @@ async function renderPPProgressDiv({ signal }) {
     const confirmDeleteBtn = progressDiv.querySelector(".tmc-confirm-delete");
     const cancelDeleteBtn = progressDiv.querySelector(".tmc-cancel-delete");
 
-    refreshBtn.addEventListener("click", () => {
+    refreshBtn.addEventListener("click", async () => {
         const refreshBtnSVG = refreshBtn.querySelector("svg");
         if (
             refreshBtnSVG.classList.contains("rotating") ||
@@ -605,7 +610,8 @@ async function renderPPProgressDiv({ signal }) {
         setTimeout(() => {
             refreshBtnSVG.classList.remove("rotating");
         }, 400);
-        updatePlaylistData();
+        await updatePlaylistData();
+        showToast("Playlist Updated");
     });
     deleteBtn.addEventListener("click", () => {
         progressDiv.classList.add("deleting");
@@ -615,9 +621,10 @@ async function renderPPProgressDiv({ signal }) {
         progressDiv.classList.remove("deleting");
     });
 
-    confirmDeleteBtn.addEventListener("click", () => {
+    confirmDeleteBtn.addEventListener("click", async () => {
         removePPMediaQueryListener();
-        chrome.storage.local.remove(state.playlistId);
+        await chrome.storage.local.remove(state.playlistId);
+        showToast("Course Removed");
     });
 
     let progressDivWideScreenRefEl;
