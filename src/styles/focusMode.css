@@ -1,0 +1,31 @@
+/* Hide recommendations sidebar on both watch and playlist pages */
+body.tmc-focus-mode ytd-watch-next-secondary-results-renderer {
+    display: none;
+}
+
+/* Hide comments section by default in focus mode */
+body.tmc-focus-mode #comments {
+    display: none;
+}
+
+/* Explicitly show comments when the 'tmc-comments-visible' class is present */
+body.tmc-focus-mode #comments.tmc-comments-visible {
+    display: block;
+}
+
+#tmc-toggle-comments-btn {
+    background-color: #f1f1f1;
+    color: #0f0f0f;
+    border: 1px solid #ccc;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+html[dark] #tmc-toggle-comments-btn {
+    background-color: #272727;
+    color: #f1f1f1;
+    border-color: #555;
+}

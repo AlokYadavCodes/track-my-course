@@ -34,6 +34,7 @@ function createNoCourseElement(message) {
 document.addEventListener("DOMContentLoaded", async () => {
     await renderCourses();
     addClickListeners();
+    initializeFocusMode();
 });
 
 let inProgressCoursesCount = 0;
@@ -53,6 +54,7 @@ async function renderCourses() {
     completedCoursesEl.innerHTML = "";
 
     const courses = await chrome.storage.local.get(null);
+    delete courses.focusMode; // Exclude focusMode from course list
     const courseValues = Object.values(courses);
 
     // If there are no courses, show the welcome message and hide the lists
@@ -172,5 +174,29 @@ function addClickListeners() {
 
             window.open(playlistUrl, "_blank", "noopener,noreferrer");
         }
+    });
+}
+
+function initializeFocusMode() {
+    const focusModeToggle = document.getElementById('focus-mode-toggle');
+
+    // Load saved state
+    chrome.storage.local.get('focusMode', (data) => {
+        focusModeToggle.checked = !!data.focusMode;
+    });
+
+    focusModeToggle.addEventListener('change', (event) => {
+        const focusMode = event.target.checked;
+        chrome.storage.local.set({ focusMode: focusMode });
+
+        // Send message to content script
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0] && tabs[0].url.includes("youtube.com")) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: "toggleFocusMode",
+                    focusMode: focusMode
+                });
+            }
+        });
     });
 }
