@@ -240,6 +240,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
         }
         state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else if (request.action === "someOtherPage") {
+        // When navigating to a non-playlist page, clean up the UI.
+        performCleanUp();
+        state.currentPage = null;
+        state.playlistId = null;
+        state.videoWatchStatus = {}; // Setting this to empty makes the page "not a course"
+        toggleFocusModeUI(state.focusMode); // This will now correctly remove focus mode styles
     }
     return true;
 });
