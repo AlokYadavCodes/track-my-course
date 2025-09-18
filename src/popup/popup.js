@@ -32,15 +32,27 @@ function createNoCourseElement(message) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await renderCourses();
+    const storageData = await chrome.storage.local.get(null);
+    const isFocusModeEnabled = storageData.focusMode || false;
+    const courses = { ...storageData };
+    delete courses.focusMode; // Exclude focusMode from course list
+
+    initializeFocusMode(isFocusModeEnabled);
+    await renderCourses(courses);
     addClickListeners();
-    initializeFocusMode();
 });
 
 let inProgressCoursesCount = 0;
 let completedCoursesCount = 0;
 
-async function renderCourses() {
+function initializeFocusMode(isEnabled) {
+    const focusModeToggle = document.getElementById("focus-mode-toggle");
+    if (focusModeToggle) {
+        focusModeToggle.checked = isEnabled;
+    }
+}
+
+async function renderCourses(courses) {
     inProgressCoursesCount = 0;
     completedCoursesCount = 0;
 
@@ -53,8 +65,10 @@ async function renderCourses() {
     inProgressCoursesEl.innerHTML = "";
     completedCoursesEl.innerHTML = "";
 
-    const courses = await chrome.storage.local.get(null);
-    delete courses.focusMode; // Exclude focusMode from course list
+    if (!courses) {
+        courses = await chrome.storage.local.get(null);
+        delete courses.focusMode; // Exclude focusMode from course list
+    }
     const courseValues = Object.values(courses);
 
     // If there are no courses, show the welcome message and hide the lists
@@ -122,6 +136,11 @@ function addClickListeners() {
     document.body.addEventListener("click", (e) => {
         const target = e.target;
 
+        const focusModeToggle = target.closest("#focus-mode-toggle");
+        if (focusModeToggle) {
+            chrome.storage.local.set({ focusMode: target.checked });
+        }
+
         const summary = target.closest(".courses-summary");
         if (summary) {
             const coursesContainer = summary.nextElementSibling;
@@ -174,29 +193,5 @@ function addClickListeners() {
 
             window.open(playlistUrl, "_blank", "noopener,noreferrer");
         }
-    });
-}
-
-function initializeFocusMode() {
-    const focusModeToggle = document.getElementById("focus-mode-toggle");
-
-    // Load saved state
-    chrome.storage.local.get("focusMode", (data) => {
-        focusModeToggle.checked = !!data.focusMode;
-    });
-
-    focusModeToggle.addEventListener("change", (event) => {
-        const focusMode = event.target.checked;
-        chrome.storage.local.set({ focusMode: focusMode });
-
-        // Send message to content script
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0] && tabs[0].url.includes("youtube.com")) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: "toggleFocusMode",
-                    focusMode: focusMode,
-                });
-            }
-        });
     });
 }
