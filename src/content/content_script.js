@@ -283,44 +283,43 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
 });
 
+// --- UI RENDERING AND MANIPULATION FUNCTIONS ---
 function toggleFocusModeUI(isFocusModeOn) {
     const body = document.body;
     const isEnrolledCourse = Object.keys(state.videoWatchStatus).length > 0;
-    const commentsSection = document.querySelector(SELECTORS.watchPage.comments);
 
     if (isFocusModeOn && isEnrolledCourse) {
-        body.classList.add('tmc-focus-mode');
+        body.classList.add("tmc-focus-mode");
         addCommentsToggleButton();
     } else {
-        body.classList.remove('tmc-focus-mode');
-        const btn = document.getElementById('tmc-toggle-comments-btn');
-        if (btn) btn.remove();
-        if (commentsSection) {
-            commentsSection.classList.remove('tmc-comments-hidden');
-            commentsSection.style.display = ''; // Explicitly show comments
-        }
+        body.classList.remove("tmc-focus-mode");
+        removeCommentsToggleButton();
     }
 }
 
 function addCommentsToggleButton() {
-    if (document.getElementById('tmc-toggle-comments-btn')) return;
+    if (document.getElementById("tmc-toggle-comments-btn")) return;
 
     const commentsSection = document.querySelector(SELECTORS.watchPage.comments);
     if (!commentsSection) return;
 
-    const button = document.createElement('button');
-    button.id = 'tmc-toggle-comments-btn';
-    button.textContent = 'Show Comments';
+    commentsSection.classList.add("tmc-comments-hidden");
+    const button = document.createElement("button");
+    button.id = "tmc-toggle-comments-btn";
+    button.textContent = "Show Comments";
     button.onclick = () => {
-        const isHidden = commentsSection.classList.toggle('tmc-comments-visible');
-        button.textContent = isHidden ? 'Hide Comments' : 'Show Comments';
+        const isHidden = commentsSection.classList.toggle("tmc-comments-hidden");
+        button.textContent = isHidden ? "Show Comments" : "Hide Comments";
     };
 
     commentsSection.parentNode.insertBefore(button, commentsSection);
 }
 
+function removeCommentsToggleButton() {
+    const btn = document.getElementById("tmc-toggle-comments-btn");
+    if (btn) btn.remove();
+}
 
-// --- UI RENDERING AND MANIPULATION FUNCTIONS ---
 async function renderWPStartCourseBtn({ signal }) {
     if (signal.aborted) throw createAbortError();
 
