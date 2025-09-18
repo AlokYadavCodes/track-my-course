@@ -1522,3 +1522,128 @@ function getCheckboxWrapper(page) {
     wrapper.append(checkbox, svg);
     return wrapper;
 }
+
+function getVideoIconSVG() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "20");
+    svg.setAttribute("height", "20");
+    svg.setAttribute("fill", "currentColor"); // inherit parent color
+    svg.setAttribute("aria-hidden", "true");
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+        "d",
+        "M17 10.5V7c0-1.1-.9-2-2-2H5C3.9 5 3 5.9 3 7v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3.5l4 4v-11l-4 4z"
+    );
+
+    svg.appendChild(path);
+
+    return svg;
+}
+
+function getCheckCircleIconSVG() {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+
+    // Outer circle
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "10");
+    circle.setAttribute("stroke", "currentColor");
+    circle.setAttribute("stroke-width", "2");
+
+    // Check mark
+    const check = document.createElementNS(svgNS, "path");
+    check.setAttribute("d", "M8.5 12.5L11 15l5-5.5");
+    check.setAttribute("fill", "none");
+    check.setAttribute("stroke", "currentColor");
+    check.setAttribute("stroke-width", "2");
+    check.setAttribute("stroke-linecap", "round");
+    check.setAttribute("stroke-linejoin", "round");
+
+    svg.appendChild(circle);
+    svg.appendChild(check);
+
+    return svg;
+}
+
+function getDurationIconSVG() {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+
+    // Outer clock circle
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "10");
+    circle.setAttribute("stroke", "currentColor");
+    circle.setAttribute("stroke-width", "2");
+
+    // Clock hand (hour)
+    const hour = document.createElementNS(svgNS, "line");
+    hour.setAttribute("x1", "12");
+    hour.setAttribute("y1", "12");
+    hour.setAttribute("x2", "12");
+    hour.setAttribute("y2", "8");
+    hour.setAttribute("stroke", "currentColor");
+    hour.setAttribute("stroke-width", "2");
+    hour.setAttribute("stroke-linecap", "round");
+
+    // Clock hand (minute)
+    const minute = document.createElementNS(svgNS, "line");
+    minute.setAttribute("x1", "12");
+    minute.setAttribute("y1", "12");
+    minute.setAttribute("x2", "15");
+    minute.setAttribute("y2", "12");
+    minute.setAttribute("stroke", "currentColor");
+    minute.setAttribute("stroke-width", "2");
+    minute.setAttribute("stroke-linecap", "round");
+
+    svg.appendChild(circle);
+    svg.appendChild(hour);
+    svg.appendChild(minute);
+
+    return svg;
+}
+
+function getRefreshIconSVG() {
+    return `
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+  <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
+</svg>`;
+}
+
+function getDeleteIconSVG() {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute(
+        "d",
+        "M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+    );
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+
+    svg.appendChild(path);
+    return svg;
+}
