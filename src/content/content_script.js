@@ -8,8 +8,8 @@ const SELECTORS = {
             "#playlist:not([hidden]) h3.ytd-playlist-panel-renderer:has(yt-formatted-string.title)",
         headerContents: "#playlist:not([hidden]) #header-contents",
         playlistActions: "#playlist:not([hidden]) #playlist-actions",
-        recommendations: '#related',
-        comments: '#comments'
+        recommendations: "#related",
+        comments: "#comments",
     },
 
     playlistPage: {
@@ -24,7 +24,7 @@ const SELECTORS = {
         playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
         playlistNameEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model span",
-        recommendations: 'ytd-watch-next-secondary-results-renderer',
+        recommendations: "ytd-watch-next-secondary-results-renderer",
 
         ytCourse: {
             startCourseBtnWideScreenRefEl: ".play-menu.wide-screen-form",
@@ -68,7 +68,7 @@ async function updateStateVariables({ signal }) {
     state.playlistId = getPlaylistId(window.location.href);
 
     const defaultDuration = { hours: 0, minutes: 0, seconds: 0 };
-    const storageData = (await getFromStorage([state.playlistId, 'focusMode']));
+    const storageData = await getFromStorage([state.playlistId, "focusMode"]);
 
     const courseData = storageData[state.playlistId] || {};
     state.focusMode = storageData.focusMode || false;
@@ -96,7 +96,6 @@ if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
 }
 handleFullPageUpdate();
 
-
 // --- EVENT HANDLING & PAGE UPDATES ---
 
 // Handles a full page update: aborts old tasks, cleans the UI, and calls the main update function for the given page type.
@@ -109,14 +108,12 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         const { signal } = state.activePageUpdateController;
 
         performCleanUp();
-        await updateStateVariables({signal});
-
+        await updateStateVariables({ signal });
 
         // Decide which update function to call based on the page type.
         const updateFunction = pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
         await updateFunction({ signal });
         toggleFocusModeUI(state.focusMode);
-
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error(`Unexpected error during full update of ${pageType} page:`, err);
@@ -141,7 +138,6 @@ async function handlePartialUpdate() {
         removeVideoCheckboxes();
         await renderWPVideoCheckboxes({ signal });
         toggleFocusModeUI(state.focusMode);
-
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error("Unexpected error during partial update:", err);

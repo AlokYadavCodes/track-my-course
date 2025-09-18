@@ -178,14 +178,14 @@ function addClickListeners() {
 }
 
 function initializeFocusMode() {
-    const focusModeToggle = document.getElementById('focus-mode-toggle');
+    const focusModeToggle = document.getElementById("focus-mode-toggle");
 
     // Load saved state
-    chrome.storage.local.get('focusMode', (data) => {
+    chrome.storage.local.get("focusMode", (data) => {
         focusModeToggle.checked = !!data.focusMode;
     });
 
-    focusModeToggle.addEventListener('change', (event) => {
+    focusModeToggle.addEventListener("change", (event) => {
         const focusMode = event.target.checked;
         chrome.storage.local.set({ focusMode: focusMode });
 
@@ -194,7 +194,7 @@ function initializeFocusMode() {
             if (tabs[0] && tabs[0].url.includes("youtube.com")) {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     action: "toggleFocusMode",
-                    focusMode: focusMode
+                    focusMode: focusMode,
                 });
             }
         });
