@@ -231,7 +231,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         }
         state.currentPage = PAGE_TYPE.PLAYLIST;
     } else if (request.action === "someOtherPage") {
-        // When navigating to a non-playlist page, clean up the UI.
         performCleanUp();
         state.currentPage = null;
         state.playlistId = null;
