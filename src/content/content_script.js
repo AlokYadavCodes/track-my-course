@@ -203,11 +203,6 @@ async function updatePlaylistPage({ signal }) {
 
 // Runs whenever there is a navigation (background script sends message and it acts accordingly)
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    if (request.action === "toggleFocusMode") {
-        state.focusMode = request.focusMode;
-        toggleFocusModeUI(state.focusMode);
-        return;
-    }
 
     if (!(request.action === "updateWatchPage") && state.investedTimeTrackerCleanup) {
         state.investedTimeTrackerCleanup();
