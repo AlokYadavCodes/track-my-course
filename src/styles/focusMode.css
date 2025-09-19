@@ -1,3 +1,15 @@
+:root {
+    --toggle-bg: #0000000d;
+    --toggle-text: #0f0f0f;
+    --toggle-hover-bg: #0000001a;
+}
+
+html[dark] {
+    --toggle-bg: #ffffff1a;
+    --toggle-text: #f1f1f1;
+    --toggle-hover-bg: #ffffff33;
+}
+
 /* Hide recommendations sidebar on watch pages */
 body.tmc-focus-mode #related {
     display: none;
@@ -8,12 +20,20 @@ body.tmc-focus-mode #comments.tmc-comments-hidden {
 }
 
 #tmc-toggle-comments-btn {
-    background-color: var(--tmc-btn-bg);
-    color: var(--tmc-btn-color);
-    border: 1px solid var(--tmc-btn-border);
-    padding: 10px 15px;
+    background-color: var(--toggle-bg);
+    color: var(--toggle-text);
+    border: none;
+    height: 36px;
+    padding: 0 16px;
     border-radius: 20px;
     cursor: pointer;
     margin-bottom: 20px;
+    font-size: 14px;
     font-weight: 500;
+    font-family: "Roboto", "Arial", sans-serif;
+}
+
+#tmc-toggle-comments-btn:hover {
+    background-color: var(--toggle-hover-bg);
+    transition: background-color 0.2s ease;
 }
