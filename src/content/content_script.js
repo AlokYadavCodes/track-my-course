@@ -235,7 +235,8 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         state.currentPage = null;
         state.playlistId = null;
         state.videoWatchStatus = {}; // Setting this to empty makes the page "not a course"
-        toggleFocusModeUI(state.focusMode); // This will now correctly remove focus mode styles
+        document.body.classList.remove("tmc-focus-mode");
+        removeCommentsToggleButton();
     }
     return true;
 });
