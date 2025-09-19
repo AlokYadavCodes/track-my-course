@@ -137,7 +137,6 @@ async function handlePartialUpdate() {
 
         removeVideoCheckboxes();
         await renderWPVideoCheckboxes({ signal });
-        toggleFocusModeUI(state.focusMode);
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error("Unexpected error during partial update:", err);
