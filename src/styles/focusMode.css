@@ -1,5 +1,5 @@
-/* Hide recommendations sidebar on both watch and playlist pages */
-body.tmc-focus-mode ytd-watch-next-secondary-results-renderer {
+/* Hide recommendations sidebar on watch pages */
+body.tmc-focus-mode #related {
     display: none;
 }
 
