@@ -8,6 +8,8 @@ const SELECTORS = {
             "#playlist:not([hidden]) h3.ytd-playlist-panel-renderer:has(yt-formatted-string.title)",
         headerContents: "#playlist:not([hidden]) #header-contents",
         playlistActions: "#playlist:not([hidden]) #playlist-actions",
+        recommendations: "#related",
+        comments: "#comments",
     },
 
     playlistPage: {
@@ -22,6 +24,7 @@ const SELECTORS = {
         playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
         playlistNameEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model span",
+        recommendations: "ytd-watch-next-secondary-results-renderer",
 
         ytCourse: {
             startCourseBtnWideScreenRefEl: ".play-menu.wide-screen-form",
@@ -46,6 +49,7 @@ const state = {
 
     currentPage: null, // set it using PAGE_TYPE
     isYtCourse: false,
+    focusMode: false,
 
     activePageUpdateController: null,
     investedTimeTrackerCleanup: null,
@@ -64,18 +68,21 @@ async function updateStateVariables({ signal }) {
     state.playlistId = getPlaylistId(window.location.href);
 
     const defaultDuration = { hours: 0, minutes: 0, seconds: 0 };
-    const storageData = (await getFromStorage(state.playlistId))[state.playlistId] ?? {};
+    const storageData = await getFromStorage([state.playlistId, "focusMode"]);
 
-    state.videoWatchStatus = storageData.videoWatchStatus ?? {};
-    state.totalDuration = storageData.totalDuration ?? {
+    const courseData = storageData[state.playlistId] || {};
+    state.focusMode = storageData.focusMode || false;
+
+    state.videoWatchStatus = courseData.videoWatchStatus ?? {};
+    state.totalDuration = courseData.totalDuration ?? {
         ...defaultDuration,
     };
-    state.watchedDuration = storageData.watchedDuration ?? {
+    state.watchedDuration = courseData.watchedDuration ?? {
         ...defaultDuration,
     };
-    state.investedTime = storageData.investedTime ?? { ...defaultDuration };
-    state.courseImgSrc = storageData.courseImgSrc ?? null;
-    state.courseName = storageData.courseName ?? null;
+    state.investedTime = courseData.investedTime ?? { ...defaultDuration };
+    state.courseImgSrc = courseData.courseImgSrc ?? null;
+    state.courseName = courseData.courseName ?? null;
 }
 
 // ---- Runs once when the script first loads ---
@@ -101,10 +108,12 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         const { signal } = state.activePageUpdateController;
 
         performCleanUp();
+        await updateStateVariables({ signal });
 
         // Decide which update function to call based on the page type.
         const updateFunction = pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
         await updateFunction({ signal });
+        toggleFocusModeUI(state.focusMode);
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error(`Unexpected error during full update of ${pageType} page:`, err);
@@ -136,8 +145,6 @@ async function handlePartialUpdate() {
 }
 
 async function updateWatchPage({ signal }) {
-    await updateStateVariables({ signal });
-
     const playlistItems = await waitForElement({
         selector: SELECTORS.watchPage.playlistItems,
         signal,
@@ -170,7 +177,6 @@ async function updateWatchPage({ signal }) {
 }
 
 async function updatePlaylistPage({ signal }) {
-    await updateStateVariables({ signal });
     state.isYtCourse = await checkIsYtCourse({ signal });
 
     if (!state.mediaQuery) {
@@ -223,12 +229,26 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
         }
         state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else if (request.action === "someOtherPage") {
+        performCleanUp();
+        state.currentPage = null;
+        state.playlistId = null;
+        state.videoWatchStatus = {}; // Setting this to empty makes the page "not a course"
+        document.body.classList.remove("tmc-focus-mode");
+        removeCommentsToggleButton();
     }
     return true;
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") return;
+
+    if (changes.focusMode) {
+        state.focusMode = changes.focusMode.newValue;
+        toggleFocusModeUI(state.focusMode);
+        return;
+    }
+
     const changedPlaylistId = Object.keys(changes)[0];
     if (changedPlaylistId !== state.playlistId) return;
 
@@ -253,6 +273,42 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 });
 
 // --- UI RENDERING AND MANIPULATION FUNCTIONS ---
+function toggleFocusModeUI(isFocusModeOn) {
+    const body = document.body;
+    const isEnrolledCourse = Object.keys(state.videoWatchStatus).length > 0;
+
+    if (isFocusModeOn && isEnrolledCourse) {
+        body.classList.add("tmc-focus-mode");
+        addCommentsToggleButton();
+    } else {
+        body.classList.remove("tmc-focus-mode");
+        removeCommentsToggleButton();
+    }
+}
+
+function addCommentsToggleButton() {
+    if (document.getElementById("tmc-toggle-comments-btn")) return;
+
+    const commentsSection = document.querySelector(SELECTORS.watchPage.comments);
+    if (!commentsSection) return;
+
+    commentsSection.classList.add("tmc-comments-hidden");
+    const button = document.createElement("button");
+    button.id = "tmc-toggle-comments-btn";
+    button.textContent = "Show Comments";
+    button.onclick = () => {
+        const isHidden = commentsSection.classList.toggle("tmc-comments-hidden");
+        button.textContent = isHidden ? "Show Comments" : "Hide Comments";
+    };
+
+    commentsSection.parentNode.insertBefore(button, commentsSection);
+}
+
+function removeCommentsToggleButton() {
+    const btn = document.getElementById("tmc-toggle-comments-btn");
+    if (btn) btn.remove();
+}
+
 async function renderWPStartCourseBtn({ signal }) {
     if (signal.aborted) throw createAbortError();
 
@@ -1222,7 +1278,7 @@ async function updatePlaylistData() {
 
 async function getFromStorage(key) {
     try {
-        return await chrome.storage.local.get([key]);
+        return await chrome.storage.local.get(key);
     } catch (err) {
         return {};
     }

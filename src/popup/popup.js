@@ -32,14 +32,27 @@ function createNoCourseElement(message) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await renderCourses();
+    const storageData = await chrome.storage.local.get(null);
+    const isFocusModeEnabled = storageData.focusMode || false;
+    const courses = { ...storageData };
+    delete courses.focusMode; // Exclude focusMode from course list
+
+    initializeFocusMode(isFocusModeEnabled);
+    await renderCourses(courses);
     addClickListeners();
 });
 
 let inProgressCoursesCount = 0;
 let completedCoursesCount = 0;
 
-async function renderCourses() {
+function initializeFocusMode(isEnabled) {
+    const focusModeToggle = document.getElementById("focus-mode-toggle");
+    if (focusModeToggle) {
+        focusModeToggle.checked = isEnabled;
+    }
+}
+
+async function renderCourses(courses) {
     inProgressCoursesCount = 0;
     completedCoursesCount = 0;
 
@@ -52,7 +65,10 @@ async function renderCourses() {
     inProgressCoursesEl.innerHTML = "";
     completedCoursesEl.innerHTML = "";
 
-    const courses = await chrome.storage.local.get(null);
+    if (!courses) {
+        courses = await chrome.storage.local.get(null);
+        delete courses.focusMode; // Exclude focusMode from course list
+    }
     const courseValues = Object.values(courses);
 
     // If there are no courses, show the welcome message and hide the lists
@@ -119,6 +135,11 @@ async function renderCourses() {
 function addClickListeners() {
     document.body.addEventListener("click", (e) => {
         const target = e.target;
+
+        const focusModeToggle = target.closest("#focus-mode-toggle");
+        if (focusModeToggle) {
+            chrome.storage.local.set({ focusMode: target.checked });
+        }
 
         const summary = target.closest(".courses-summary");
         if (summary) {

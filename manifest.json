@@ -32,7 +32,8 @@
                 "src/styles/toast.css",
                 "src/styles/checkbox.css",
                 "src/styles/playlistPage.css",
-                "src/styles/playlistWatchPage.css"
+                "src/styles/playlistWatchPage.css",
+                "src/styles/focusMode.css"
             ],
             "matches": ["https://www.youtube.com/*"]
         }
