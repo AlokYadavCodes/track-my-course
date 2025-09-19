@@ -8,18 +8,12 @@ body.tmc-focus-mode #comments.tmc-comments-hidden {
 }
 
 #tmc-toggle-comments-btn {
-    background-color: #f1f1f1;
-    color: #0f0f0f;
-    border: 1px solid #ccc;
+    background-color: var(--tmc-btn-bg);
+    color: var(--tmc-btn-color);
+    border: 1px solid var(--tmc-btn-border);
     padding: 10px 15px;
     border-radius: 20px;
     cursor: pointer;
     margin-bottom: 20px;
     font-weight: 500;
-}
-
-html[dark] #tmc-toggle-comments-btn {
-    background-color: #272727;
-    color: #f1f1f1;
-    border-color: #555;
 }
