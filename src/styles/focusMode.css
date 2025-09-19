@@ -3,14 +3,8 @@ body.tmc-focus-mode #related {
     display: none;
 }
 
-/* Hide comments section by default in focus mode */
-body.tmc-focus-mode #comments {
+body.tmc-focus-mode #comments.tmc-comments-hidden {
     display: none;
-}
-
-/* Explicitly show comments when the 'tmc-comments-visible' class is present */
-body.tmc-focus-mode #comments.tmc-comments-visible {
-    display: block;
 }
 
 #tmc-toggle-comments-btn {
