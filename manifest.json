@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "TrackMyCourse: YouTube Playlist Progress Tracker",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Turn YouTube playlists into courses. Track with checkmarks, progress bar, total and watched duration, and completion percentage.",
     "icons": {
         "16": "icons/logo_16.png",
