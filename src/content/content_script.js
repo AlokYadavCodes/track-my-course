@@ -626,7 +626,7 @@ async function renderPPProgressDiv({ signal }) {
                 </svg>
                 <span class="tmc-watched-text">${
                     Object.values(state.videoWatchStatus).filter((s) => s).length
-                } / ${Object.keys(state.videoWatchStatus).length} watched</span>
+                } / ${Object.keys(state.videoWatchStatus).length} watched (${calculateCompletionPercentage()}%)</span>
             </div>
             <div class="tmc-actions">
                 <div class="tmc-refresh" title="Update Playlist">
@@ -801,10 +801,11 @@ function refreshPlaylistPageUI({ signal }) {
 
     progressDiv.querySelector(".tmc-duration-text").textContent =
         `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
-
+    
+    const percentage = calculateCompletionPercentage();
     progressDiv.querySelector(".tmc-watched-text").textContent = `${
         Object.values(state.videoWatchStatus).filter(Boolean).length
-    } / ${Object.keys(state.videoWatchStatus).length} watched`;
+    } / ${Object.keys(state.videoWatchStatus).length} watched (${percentage}%)`;
 
     updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
 }
