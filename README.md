@@ -91,6 +91,25 @@ Follow these steps to set up the project on your local machine.
 
 > **Note:** Changes to the source code will only reflect after you reload the extension on the `chrome://extensions/` page.
 
+### Building browser bundles (manifests)
+
+This project includes a small script to generate browser-specific bundles (manifests and assets) into `dist/`.
+
+Run the generator:
+
+```bash
+# generate Chrome bundle
+npm run manifest:chrome
+
+# generate Firefox bundle
+npm run manifest:firefox
+
+# generate both
+npm run manifest:all
+```
+
+The script will copy `icons/` and `src/` into `dist/<browser>/`.
+
 ### Project Structure
 
 ```
