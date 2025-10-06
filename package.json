@@ -3,7 +3,10 @@
     "version": "1.0.0",
     "description": "Turn YouTube playlists into courses. Track your playlist with checkmarks, progress bar, total and watched duration, and completion percentage.",
     "scripts": {
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+           "manifest:chrome": "node scripts/generate-manifest.js chrome",
+           "manifest:firefox": "node scripts/generate-manifest.js firefox",
+           "manifest:all": "node scripts/generate-manifest.js"
     },
     "devDependencies": {
         "prettier": "^3.6.2"
