@@ -85,36 +85,9 @@ async function renderCourses(courses) {
 
     for (const courseId in courses) {
         const course = courses[courseId];
-        const completedPercentage = getCompletedPercentage(course);
-        const courseElement = document.createElement("div");
-        courseElement.className = "course";
-        courseElement.dataset.courseId = courseId;
-        courseElement.innerHTML = `
-            <div class="course-content">
-                <div class="course-img">
-                    <img src="${course.courseImgSrc}" alt="Course Image">
-                </div>
-                <div class="course-info">
-                    <h3>${course.courseName}</h3>
-                    <p class="completion">${completedPercentage}% completed</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${completedPercentage}%;"></div>
-                    </div>
-                </div>
-            </div>
-            <button class="delete-btn" title="Remove Course">
-                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 7H12M18 7H12M12 7V7C12 7 12 7.58172 12 8.5C12 9.41828 12 10 12 10M12 7V7C12 7 12 6.41828 12 5.5C12 4.58172 12 4 12 4M10 11V17M14 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7H9V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div class="delete-confirmation">
-                <p> Are you sure you want to remove this course? </p>
-                <div class="delete-confirmation-actions">
-                    <button class="cancel-delete-btn">Cancel</button>
-                    <button class="confirm-delete-btn">Remove Course</button>
-                </div>
-            </div>
-        `;
+        const courseElement = createCourseElement(courseId, course);
 
-        if (completedPercentage === 100) {
+        if (getCompletedPercentage(course) === 100) {
             completedCoursesCount++;
             completedCoursesEl.appendChild(courseElement);
         } else {
@@ -130,6 +103,83 @@ async function renderCourses(courses) {
         completedCoursesEl.appendChild(createNoCourseElement(NO_COURSES_COMPLETED));
     }
     updateCoursesCount();
+}
+
+function createCourseElement(courseId, course) {
+    const completedPercentage = getCompletedPercentage(course);
+
+    const courseElement = document.createElement("div");
+    courseElement.className = "course";
+    courseElement.dataset.courseId = courseId;
+
+    // Course content container
+    const content = document.createElement("div");
+    content.className = "course-content";
+
+    // Course image
+    const imgDiv = document.createElement("div");
+    imgDiv.className = "course-img";
+    const img = document.createElement("img");
+    img.src = course.courseImgSrc;
+    img.alt = "Course Image";
+    imgDiv.appendChild(img);
+
+    // Course info
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "course-info";
+    const title = document.createElement("h3");
+    title.textContent = course.courseName;
+    const completion = document.createElement("p");
+    completion.className = "completion";
+    completion.textContent = `${completedPercentage}% completed`;
+
+    // Progress bar
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+    const progressFill = document.createElement("div");
+    progressFill.className = "progress-fill";
+    progressFill.style.width = `${completedPercentage}%`;
+    progressBar.appendChild(progressFill);
+
+    infoDiv.appendChild(title);
+    infoDiv.appendChild(completion);
+    infoDiv.appendChild(progressBar);
+
+    content.appendChild(imgDiv);
+    content.appendChild(infoDiv);
+    courseElement.appendChild(content);
+
+    // Delete button
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "delete-btn";
+    deleteBtn.title = "Remove Course";
+    // Optionally, add your SVG via innerHTML only for static content (safe)
+    deleteBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 7H12M18 7H12M12 7V7C12 7 12 7.58172 12 8.5C12 9.41828 12 10 12 10M12 7V7C12 7 12 6.41828 12 5.5C12 4.58172 12 4 12 4M10 11V17M14 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7H9V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    courseElement.appendChild(deleteBtn);
+
+    // Delete confirmation
+    const deleteConfirmation = document.createElement("div");
+    deleteConfirmation.className = "delete-confirmation";
+    const p = document.createElement("p");
+    p.textContent = "Are you sure you want to remove this course?";
+    const actions = document.createElement("div");
+    actions.className = "delete-confirmation-actions";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "cancel-delete-btn";
+    cancelBtn.textContent = "Cancel";
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "confirm-delete-btn";
+    confirmBtn.textContent = "Remove Course";
+
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    deleteConfirmation.appendChild(p);
+    deleteConfirmation.appendChild(actions);
+    courseElement.appendChild(deleteConfirmation);
+
+    return courseElement;
 }
 
 function addClickListeners() {

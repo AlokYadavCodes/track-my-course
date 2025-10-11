@@ -399,12 +399,38 @@ async function renderDisabledStartCourseBtn({ signal }) {
     });
     const buttonContainerEl = document.createElement("div");
     buttonContainerEl.className = "disabled-btn-container";
-    buttonContainerEl.innerHTML = `
-    <button disabled class="tmc-wp-start-course-btn disabled-tmc-wp-start-course-btn">Start Course</button>
-    <div class="tooltip">
-      This playlist has <b>200+ videos</b>, so please start the course from the <a target="_blank" href=https://www.youtube.com/playlist?list=${state.playlistId}>playlist page </a>.
-    </div>
-    `;
+
+    // Start button
+    const startBtn = document.createElement("button");
+    startBtn.disabled = true;
+    startBtn.className = "tmc-wp-start-course-btn disabled-tmc-wp-start-course-btn";
+    startBtn.textContent = "Start Course";
+
+    // Tooltip
+    const tooltip = document.createElement("div");
+    tooltip.className = "tooltip";
+
+    // Tooltip content
+    const textNode1 = document.createTextNode("This playlist has ");
+    const bold = document.createElement("b");
+    bold.textContent = "200+ videos";
+    const textNode2 = document.createTextNode(", so please start the course from the ");
+
+    const link = document.createElement("a");
+    link.href = `https://www.youtube.com/playlist?list=${state.playlistId}`;
+    link.target = "_blank";
+    link.textContent = "playlist page";
+
+    const textNode3 = document.createTextNode(".");
+
+    tooltip.appendChild(textNode1);
+    tooltip.appendChild(bold);
+    tooltip.appendChild(textNode2);
+    tooltip.appendChild(link);
+    tooltip.appendChild(textNode3);
+
+    buttonContainerEl.appendChild(startBtn);
+    buttonContainerEl.appendChild(tooltip);
 
     menu.appendChild(buttonContainerEl);
 
@@ -512,44 +538,137 @@ async function renderWPProgressDiv({ signal }) {
 
     const progressDiv = document.createElement("div");
     progressDiv.classList.add("tmc-progress-div", "tmc-wp-progress-div");
-    progressDiv.innerHTML = `
-        <div class="progress-content-wrapper">
-            <div class="time-container">
-                <div id="watched-time">${`${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`}</div>
-                <div class="completed-videos">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                        <path d="M8.5 12.5L11 15l5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span><span id="watched-videos-count">${
-                        Object.values(state.videoWatchStatus).filter((s) => s).length
-                    }</span>/<span id="total-videos-count">${
-                        Object.keys(state.videoWatchStatus).length
-                    }</span> watched</span>
-                </div>
-                <div id="total-time">${`${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`}</div>
-            </div>
-            <div class="progress-bar-outer-container">
-                <div class="progress-bar-container">
-                    <div id="progress-bar" style="width: ${calculateCompletionPercentage()}%;"></div>
-                </div>
-            </div>
-            <div class="completed-in"><b id="completed-percentage">${calculateCompletionPercentage()}</b><b>%</b> completed in <b id="invested-time">0h 0m</b></div>
-            <div class="tmc-delete-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-        </div>
-        <div class="tmc-delete-popup">
-            <p>Remove this course?</p>
-            <div class="tmc-delete-buttons">
-                <button class="tmc-confirm-delete">Yes</button>
-                <button class="tmc-cancel-delete">No</button>
-            </div>
-        </div>
+
+    // Wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = "progress-content-wrapper";
+
+    // Time container
+    const timeContainer = document.createElement("div");
+    timeContainer.className = "time-container";
+
+    // Watched time
+    const watchedTime = document.createElement("div");
+    watchedTime.id = "watched-time";
+    watchedTime.textContent = `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
+
+    // Completed videos
+    const completedVideos = document.createElement("div");
+    completedVideos.className = "completed-videos";
+
+    const svgCheck = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgCheck.setAttribute("width", "16");
+    svgCheck.setAttribute("height", "16");
+    svgCheck.setAttribute("viewBox", "0 0 24 24");
+    svgCheck.setAttribute("fill", "none");
+    svgCheck.innerHTML = `
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+        <path d="M8.5 12.5L11 15l5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     `;
 
+    const videosSpan = document.createElement("span");
+    const watchedCount = document.createElement("span");
+    watchedCount.id = "watched-videos-count";
+    watchedCount.textContent = Object.values(state.videoWatchStatus).filter(Boolean).length;
+
+    const totalCount = document.createElement("span");
+    totalCount.id = "total-videos-count";
+    totalCount.textContent = Object.keys(state.videoWatchStatus).length;
+
+    videosSpan.appendChild(watchedCount);
+    videosSpan.appendChild(document.createTextNode("/"));
+    videosSpan.appendChild(totalCount);
+    videosSpan.appendChild(document.createTextNode(" watched"));
+
+    completedVideos.appendChild(svgCheck);
+    completedVideos.appendChild(videosSpan);
+
+    // Total time
+    const totalTime = document.createElement("div");
+    totalTime.id = "total-time";
+    totalTime.textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+
+    // Append to time container
+    timeContainer.appendChild(watchedTime);
+    timeContainer.appendChild(completedVideos);
+    timeContainer.appendChild(totalTime);
+
+    // Progress bar
+    const progressBarOuter = document.createElement("div");
+    progressBarOuter.className = "progress-bar-outer-container";
+
+    const progressBarContainer = document.createElement("div");
+    progressBarContainer.className = "progress-bar-container";
+
+    const progressBar = document.createElement("div");
+    progressBar.id = "progress-bar";
+    progressBar.style.width = `${calculateCompletionPercentage()}%`;
+
+    progressBarContainer.appendChild(progressBar);
+    progressBarOuter.appendChild(progressBarContainer);
+
+    // Completed percentage & invested time
+    const completedDiv = document.createElement("div");
+    completedDiv.className = "completed-in";
+
+    const completedPercent = document.createElement("b");
+    completedPercent.id = "completed-percentage";
+    completedPercent.textContent = calculateCompletionPercentage();
+
+    const percentText = document.createElement("b");
+    percentText.textContent = "%";
+
+    const investedTime = document.createElement("b");
+    investedTime.id = "invested-time";
+    investedTime.textContent = "0h 0m";
+
+    completedDiv.appendChild(completedPercent);
+    completedDiv.appendChild(percentText);
+    completedDiv.appendChild(document.createTextNode(" completed in "));
+    completedDiv.appendChild(investedTime);
+
+    // Delete button
+    const deleteBtn = document.createElement("div");
+    deleteBtn.className = "tmc-delete-btn";
+    deleteBtn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    `;
+
+    // Delete popup
+    const deletePopup = document.createElement("div");
+    deletePopup.className = "tmc-delete-popup";
+
+    const popupText = document.createElement("p");
+    popupText.textContent = "Remove this course?";
+
+    const deleteButtons = document.createElement("div");
+    deleteButtons.className = "tmc-delete-buttons";
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "tmc-confirm-delete";
+    confirmBtn.textContent = "Yes";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "tmc-cancel-delete";
+    cancelBtn.textContent = "No";
+
+    deleteButtons.appendChild(confirmBtn);
+    deleteButtons.appendChild(cancelBtn);
+    deletePopup.appendChild(popupText);
+    deletePopup.appendChild(deleteButtons);
+
+    // Append all to wrapper
+    wrapper.appendChild(timeContainer);
+    wrapper.appendChild(progressBarOuter);
+    wrapper.appendChild(completedDiv);
+    wrapper.appendChild(deleteBtn);
+
+    progressDiv.appendChild(wrapper);
+    progressDiv.appendChild(deletePopup);
+
+    // Append to header
     const headerContents = await waitForElement({
         selector: SELECTORS.watchPage.headerContents,
         signal,
@@ -558,145 +677,189 @@ async function renderWPProgressDiv({ signal }) {
         selector: SELECTORS.watchPage.playlistActions,
         signal,
     });
-
-    if (state.playlistActions) {
-        state.playlistActions.remove();
-    }
-
+    if (state.playlistActions) state.playlistActions.remove();
     if (signal.aborted) throw createAbortError();
+
     headerContents.appendChild(progressDiv);
 
-    const deleteBtn = progressDiv.querySelector(".tmc-delete-btn");
-    const confirmDeleteBtn = progressDiv.querySelector(".tmc-confirm-delete");
-    const cancelDeleteBtn = progressDiv.querySelector(".tmc-cancel-delete");
-
-    progressDiv.addEventListener("click", (e) => {
-        e.stopPropagation();
-    });
-
+    // Event listeners
+    progressDiv.addEventListener("click", (e) => e.stopPropagation());
     deleteBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         progressDiv.classList.add("deleting");
     });
-
-    cancelDeleteBtn.addEventListener("click", (e) => {
+    cancelBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         progressDiv.classList.remove("deleting");
     });
-
-    confirmDeleteBtn.addEventListener("click", async (e) => {
+    confirmBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
-        if (state.investedTimeTrackerCleanup) {
-            state.investedTimeTrackerCleanup();
-        }
+        if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
         await chrome.storage.local.remove(state.playlistId);
         showToast("Course Removed");
     });
 }
 
 async function renderPPProgressDiv({ signal }) {
-    if (signal.aborted) throw createAbortError();
+    if (signal?.aborted) throw createAbortError();
 
     const progressDiv = document.createElement("div");
     progressDiv.classList.add("tmc-progress-div", "tmc-pp-progress-div");
-    progressDiv.innerHTML = `
-        <div class="progress-content-wrapper">
-            <div class="tmc-total">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-                    <path d="M17 10.5V7c0-1.1-.9-2-2-2H5C3.9 5 3 5.9 3 7v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3.5l4 4v-11l-4 4z"></path>
-                </svg>
-                <span class="tmc-total-text">${
-                    Object.keys(state.videoWatchStatus).length
-                } videos</span>
-            </div>
-            <div class="tmc-duration">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="12" x2="12" y2="8" stroke-linecap="round"></line>
-                    <line x1="12" y1="12" x2="15" y2="12" stroke-linecap="round"></line>
-                </svg>
-                <span class="tmc-duration-text">${state.totalDuration.hours}h ${
-                    state.totalDuration.minutes
-                }m ${state.totalDuration.seconds}s</span>
-            </div>
-            <div class="tmc-watched">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M8.5 12.5L11 15l5-5.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                </svg>
-                <span class="tmc-watched-text">${
-                    Object.values(state.videoWatchStatus).filter((s) => s).length
-                } / ${Object.keys(state.videoWatchStatus).length} watched</span>
-            </div>
-            <div class="tmc-actions">
-                <div class="tmc-refresh" title="Update Playlist">
-                    <svg class="tmc-refresh-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
-                    </svg>
-                </div>
-                <div class="tmc-delete" title="Remove Course">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        <div class="tmc-delete-popup">
-            <p>Remove this course?</p>
-            <div class="tmc-delete-buttons">
-                <button class="tmc-confirm-delete">Yes</button>
-                <button class="tmc-cancel-delete">No</button>
-            </div>
-        </div>
-    `;
-    const refreshBtn = progressDiv.querySelector(".tmc-refresh");
-    const deleteBtn = progressDiv.querySelector(".tmc-delete");
-    const confirmDeleteBtn = progressDiv.querySelector(".tmc-confirm-delete");
-    const cancelDeleteBtn = progressDiv.querySelector(".tmc-cancel-delete");
 
-    refreshBtn.addEventListener("click", async () => {
-        const refreshBtnSVG = refreshBtn.querySelector("svg");
-        if (
-            refreshBtnSVG.classList.contains("rotating") ||
-            refreshBtnSVG.classList.contains("scanning")
-        ) {
-            return;
-        }
-        refreshBtnSVG.classList.add("rotating");
-        setTimeout(() => {
-            refreshBtnSVG.classList.remove("rotating");
-        }, 400);
-        await updatePlaylistData();
-        showToast("Playlist Updated");
-    });
-    deleteBtn.addEventListener("click", () => {
-        progressDiv.classList.add("deleting");
-    });
+    // Wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = "progress-content-wrapper";
 
-    cancelDeleteBtn.addEventListener("click", () => {
-        progressDiv.classList.remove("deleting");
-    });
+    // Total videos
+    const totalDiv = document.createElement("div");
+    totalDiv.className = "tmc-total";
 
-    confirmDeleteBtn.addEventListener("click", async () => {
-        removePPMediaQueryListener();
-        await chrome.storage.local.remove(state.playlistId);
-        showToast("Course Removed");
-    });
+    const totalSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    totalSvg.setAttribute("viewBox", "0 0 24 24");
+    totalSvg.setAttribute("width", "20");
+    totalSvg.setAttribute("height", "20");
+    totalSvg.setAttribute("fill", "currentColor");
+    totalSvg.setAttribute("aria-hidden", "true");
+    totalSvg.innerHTML = `<path d="M17 10.5V7c0-1.1-.9-2-2-2H5C3.9 5 3 5.9 3 7v10c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-3.5l4 4v-11l-4 4z"></path>`;
 
-    let progressDivWideScreenRefEl;
+    const totalText = document.createElement("span");
+    totalText.className = "tmc-total-text";
+    totalText.textContent = `${Object.keys(state.videoWatchStatus).length} videos`;
+
+    totalDiv.appendChild(totalSvg);
+    totalDiv.appendChild(totalText);
+
+    // Duration
+    const durationDiv = document.createElement("div");
+    durationDiv.className = "tmc-duration";
+
+    const durationSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    durationSvg.setAttribute("width", "16");
+    durationSvg.setAttribute("height", "16");
+    durationSvg.setAttribute("viewBox", "0 0 24 24");
+    durationSvg.setAttribute("fill", "none");
+    durationSvg.setAttribute("stroke", "currentColor");
+    durationSvg.setAttribute("stroke-width", "2");
+    durationSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle>
+                             <line x1="12" y1="12" x2="12" y2="8" stroke-linecap="round"></line>
+                             <line x1="12" y1="12" x2="15" y2="12" stroke-linecap="round"></line>`;
+
+    const durationText = document.createElement("span");
+    durationText.className = "tmc-duration-text";
+    durationText.textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
+
+    durationDiv.appendChild(durationSvg);
+    durationDiv.appendChild(durationText);
+
+    // Watched
+    const watchedDiv = document.createElement("div");
+    watchedDiv.className = "tmc-watched";
+
+    const watchedSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    watchedSvg.setAttribute("width", "16");
+    watchedSvg.setAttribute("height", "16");
+    watchedSvg.setAttribute("viewBox", "0 0 24 24");
+    watchedSvg.setAttribute("fill", "none");
+    watchedSvg.setAttribute("stroke", "currentColor");
+    watchedSvg.setAttribute("stroke-width", "2");
+    watchedSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8.5 12.5L11 15l5-5.5" stroke-linecap="round" stroke-linejoin="round"></path>`;
+
+    const watchedText = document.createElement("span");
+    watchedText.className = "tmc-watched-text";
+    const watchedCount = Object.values(state.videoWatchStatus).filter(Boolean).length;
+    const totalCount = Object.keys(state.videoWatchStatus).length;
+    watchedText.textContent = `${watchedCount} / ${totalCount} watched`;
+
+    watchedDiv.appendChild(watchedSvg);
+    watchedDiv.appendChild(watchedText);
+
+    const actionsDiv = document.createElement("div");
+    actionsDiv.className = "tmc-actions";
+
+    // Refresh button
+    const refreshDiv = document.createElement("div");
+    refreshDiv.className = "tmc-refresh";
+    refreshDiv.title = "Update Playlist";
+    refreshDiv.innerHTML = `<svg class="tmc-refresh-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 0 0-8 8h2a6 6 0 0 1 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35zM6.35 17.65A7.95 7.95 0 0 0 12 20a8 8 0 0 0 8-8h-2a6 6 0 0 1-6 6c-1.66 0-3.14-.69-4.22-1.78L11 13H4v7l2.35-2.35z"/>
+    </svg>`;
+
+    // Delete button
+    const deleteDiv = document.createElement("div");
+    deleteDiv.className = "tmc-delete";
+    deleteDiv.title = "Remove Course";
+    deleteDiv.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>`;
+
+    actionsDiv.appendChild(refreshDiv);
+    actionsDiv.appendChild(deleteDiv);
+
+    // Append total, duration, watched, actions to wrapper
+    wrapper.appendChild(totalDiv);
+    wrapper.appendChild(durationDiv);
+    wrapper.appendChild(watchedDiv);
+    wrapper.appendChild(actionsDiv);
+
+    // Delete popup
+    const deletePopup = document.createElement("div");
+    deletePopup.className = "tmc-delete-popup";
+
+    const popupText = document.createElement("p");
+    popupText.textContent = "Remove this course?";
+
+    const deleteButtons = document.createElement("div");
+    deleteButtons.className = "tmc-delete-buttons";
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className = "tmc-confirm-delete";
+    confirmBtn.textContent = "Yes";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "tmc-cancel-delete";
+    cancelBtn.textContent = "No";
+
+    deleteButtons.appendChild(confirmBtn);
+    deleteButtons.appendChild(cancelBtn);
+    deletePopup.appendChild(popupText);
+    deletePopup.appendChild(deleteButtons);
+
+    progressDiv.appendChild(wrapper);
+    progressDiv.appendChild(deletePopup);
+
+    // Append progressDiv to page
+    let targetEl;
     if (state.isYtCourse) {
-        progressDivWideScreenRefEl = await waitForElement({
+        targetEl = await waitForElement({
             selector: SELECTORS.playlistPage.ytCourse.progressDivWideScreenRefEl,
             signal,
         });
     } else {
-        progressDivWideScreenRefEl = await waitForElement({
+        targetEl = await waitForElement({
             selector: SELECTORS.playlistPage.progressDivWideScreenRefEl,
             signal,
         });
     }
+    targetEl.insertAdjacentElement("beforebegin", progressDiv);
 
-    progressDivWideScreenRefEl.insertAdjacentElement("beforebegin", progressDiv);
+    // Event listeners
+    refreshDiv.addEventListener("click", async () => {
+        const svg = refreshDiv.querySelector("svg");
+        if (svg.classList.contains("rotating") || svg.classList.contains("scanning")) return;
+        svg.classList.add("rotating");
+        setTimeout(() => svg.classList.remove("rotating"), 400);
+        await updatePlaylistData();
+        showToast("Playlist Updated");
+    });
+
+    deleteDiv.addEventListener("click", () => progressDiv.classList.add("deleting"));
+    cancelBtn.addEventListener("click", () => progressDiv.classList.remove("deleting"));
+    confirmBtn.addEventListener("click", async () => {
+        removePPMediaQueryListener();
+        await chrome.storage.local.remove(state.playlistId);
+        showToast("Course Removed");
+    });
 }
 
 async function renderPlaylistScanning({ signal }) {
