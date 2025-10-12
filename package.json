@@ -3,9 +3,14 @@
     "version": "1.0.0",
     "description": "Turn YouTube playlists into courses. Track your playlist with checkmarks, progress bar, total and watched duration, and completion percentage.",
     "scripts": {
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "build:chrome": "cross-env TARGET_BROWSER=chrome node scripts/build.js",
+        "build:firefox": "cross-env TARGET_BROWSER=firefox node scripts/build.js",
+        "build": "node scripts/build.js"
     },
     "devDependencies": {
+        "cross-env": "^10.1.0",
+        "fs-extra": "^11.3.2",
         "prettier": "^3.6.2"
     }
 }
