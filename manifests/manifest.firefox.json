@@ -1,0 +1,51 @@
+{
+    "manifest_version": 3,
+    "name": "TrackMyCourse: YouTube Playlist Tracker",
+    "version": "1.2.0",
+    "description": "Turn YouTube playlists into courses. Track with checkmarks, progress bar, total and watched duration, and completion percentage.",
+    "icons": {
+        "16": "icons/logo_16.png",
+        "24": "icons/logo_24.png",
+        "32": "icons/logo_32.png",
+        "48": "icons/logo_48.png",
+        "128": "icons/logo_128.png"
+    },
+    "permissions": ["storage", "webNavigation"],
+    "host_permissions": ["https://www.youtube.com/*", "https://i.ytimg.com/*"],
+    "background": {
+        "scripts": ["src/background/background.js"]
+    },
+    "action": {
+        "default_popup": "src/popup/popup.html",
+        "default_icon": {
+            "16": "icons/logo_16.png",
+            "24": "icons/logo_24.png",
+            "32": "icons/logo_32.png",
+            "48": "icons/logo_48.png",
+            "128": "icons/logo_128.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "js": ["src/content/toast.js", "src/content/content_script.js"],
+            "css": [
+                "src/styles/toast.css",
+                "src/styles/checkbox.css",
+                "src/styles/playlistPage.css",
+                "src/styles/playlistWatchPage.css",
+                "src/styles/focusMode.css"
+            ],
+            "matches": ["https://www.youtube.com/*"]
+        }
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "trackmycourse@alok",
+            "strict_min_version": "110.0",
+            "data_collection_permissions": {
+                "required": ["websiteContent"],
+                "optional": []
+            }
+        }
+    }
+}
