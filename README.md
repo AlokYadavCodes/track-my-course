@@ -91,24 +91,24 @@ Follow these steps to set up the project on your local machine.
 
 > **Note:** Changes to the source code will only reflect after you reload the extension on the `chrome://extensions/` page.
 
-### Building browser bundles (manifests)
+### Building browser bundles
 
-This project includes a small script to generate browser-specific bundles (manifests and assets) into `dist/`.
+There is a script `(scripts/build.js)` that generates the Chrome and Firefox bundles into the `dist/` folder.
 
-Run the generator:
+Run the build commands:
 
 ```bash
-# generate Chrome bundle
-npm run manifest:chrome
+# build Chrome bundle
+npm run build:chrome
 
-# generate Firefox bundle
-npm run manifest:firefox
+# build Firefox bundle
+npm run build:firefox
 
-# generate both
-npm run manifest:all
+# build both Chrome and Firefox
+npm run build
 ```
 
-The script will copy `icons/` and `src/` into `dist/<browser>/`.
+The script will copy `icons/` and `src/` into `dist/<browser>/` and include the appropriate manifest (`manifest.chrome.json` or `manifest.firefox.json`) for each browser.
 
 ### Project Structure
 
@@ -120,10 +120,12 @@ track-my-course/
 │   ├── content/       # Injects scripts directly into web pages.
 │   ├── popup/         # Code for the extension's popup window.
 │   └── styles/        # Contains CSS files for UI elements injected onto pages.
+├── manifests/         # Browser-specific manifests
+│   ├── manifest.chrome.json
+│   └── manifest.firefox.json
 ├── .prettierrc        # Prettier configuration for consistent formatting
 ├── package.json       # Project dependencies and scripts
-├── package-lock.json  # Locked dependency versions
-└── manifest.json      # Chrome extension configuration file.
+└── package-lock.json  # Locked dependency versions
 ```
 
 ---
