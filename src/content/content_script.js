@@ -510,27 +510,99 @@ function setupCheckbox(video, pageType) {
     checkbox.checked = state.videoWatchStatus[videoId] ?? false;
 
     checkbox.addEventListener("click", async (e) => {
-        state.videoWatchStatus[videoId] = e.target.checked;
+        const isChecked = e.target.checked;
+
         let videoDuration;
-        if (video.querySelector(SELECTORS.videoDuration)) {
-            videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
-        } else {
-            videoDuration = (
-                await waitForElement({
-                    selector: SELECTORS.videoDuration,
-                    parentEl: video,
-                    signal,
-                })
-            ).textContent;
+        try {
+            videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+            if (!videoDuration) {
+                videoDuration = (
+                    await waitForElement({
+                        selector: SELECTORS.videoDuration,
+                        parentEl: video,
+                        signal: null,
+                    })
+                )?.textContent;
+            }
+        } catch (err) {
+            console.error("Could not determine video duration for synchronization:", err);
+            return;
         }
 
-        if (e.target.checked) addDurationTo(videoDuration, "watched");
-        else removeFromWatchDuration(videoDuration);
-        setToStorage();
+        await synchronizeVideoStatus(videoId, isChecked, videoDuration);
     });
 
     const menu = video.querySelector("#menu");
     menu.appendChild(checkboxWrapper);
+}
+
+/**
+ * Synchronizes the watched status of a single video across ALL tracked courses.
+ * It fetches all courses, updates the status and watched duration in all affected
+ * courses, saves them to storage, and finally updates the current page's state/UI.
+ */
+async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
+    const storageData = await getFromStorage(null);
+    const allPlaylistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+
+    const durationSeconds = parseDurationToSeconds(videoDuration);
+    let updates = {};
+    let currentCourseUpdate = null;
+
+    for (const playlistId of allPlaylistIds) {
+        const course = storageData[playlistId];
+
+        // Check if the video exists in this course
+        if (course.videoWatchStatus && course.videoWatchStatus.hasOwnProperty(videoId)) {
+            const oldStatus = course.videoWatchStatus[videoId];
+            const newStatus = isChecked;
+
+            // Only update if the status has changed for this video in this course
+            if (oldStatus !== newStatus) {
+                course.videoWatchStatus[videoId] = newStatus;
+                let watchedSeconds =
+                    course.watchedDuration.hours * 3600 +
+                    course.watchedDuration.minutes * 60 +
+                    course.watchedDuration.seconds;
+
+                if (newStatus) {
+                    watchedSeconds += durationSeconds;
+                } else {
+                    watchedSeconds -= durationSeconds;
+                }
+
+                watchedSeconds = Math.max(0, watchedSeconds);
+                course.watchedDuration = formatDuration(watchedSeconds);
+                updates[playlistId] = course;
+
+                if (playlistId === state.playlistId) {
+                    currentCourseUpdate = course;
+                }
+            }
+        }
+    }
+
+    if (Object.keys(updates).length > 0) {
+        await chrome.storage.local.set(updates);
+
+        // Update the current page's state and UI if it was affected.
+        if (currentCourseUpdate) {
+            // Manually update the global state object to reflect changes immediately
+            state.videoWatchStatus = currentCourseUpdate.videoWatchStatus;
+            state.watchedDuration = currentCourseUpdate.watchedDuration;
+
+            setToStorage();
+            refreshUI();
+        }
+
+        const coursesAffected = Object.keys(updates).length;
+        const syncMessage =
+            coursesAffected > 1
+                ? `Progress synchronized across ${coursesAffected} courses.`
+                : "Course progress updated.";
+
+        showToast(syncMessage);
+    }
 }
 
 async function renderWPProgressDiv({ signal }) {
