@@ -249,8 +249,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         return;
     }
 
-    const changedPlaylistId = Object.keys(changes)[0];
-    if (changedPlaylistId !== state.playlistId) return;
+    if (!Object.keys(changes).includes(state.playlistId)) return;
 
     const currentURL = window.location.href;
 
@@ -262,7 +261,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         state.currentPage = null;
     }
 
-    const change = changes[changedPlaylistId];
+    const change = changes[state.playlistId];
     if (!change.oldValue || !change.newValue) {
         // course started or deleted
         handleFullPageUpdate();
