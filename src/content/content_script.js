@@ -510,11 +510,9 @@ function setupCheckbox(video, pageType) {
     checkbox.checked = state.videoWatchStatus[videoId] ?? false;
 
     checkbox.addEventListener("click", async (e) => {
-        state.videoWatchStatus[videoId] = e.target.checked;
-        let videoDuration;
-        if (video.querySelector(SELECTORS.videoDuration)) {
-            videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
-        } else {
+        const isChecked = e.target.checked;
+        let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+        if (!videoDuration) {
             videoDuration = (
                 await waitForElement({
                     selector: SELECTORS.videoDuration,
@@ -523,14 +521,61 @@ function setupCheckbox(video, pageType) {
                 })
             ).textContent;
         }
-
-        if (e.target.checked) addDurationTo(videoDuration, "watched");
-        else removeFromWatchDuration(videoDuration);
-        setToStorage();
+        await synchronizeVideoStatus(videoId, isChecked, videoDuration);
     });
 
     const menu = video.querySelector("#menu");
     menu.appendChild(checkboxWrapper);
+}
+
+/**
+ * Synchronizes the watched status of a single video across ALL tracked courses.
+ * It fetches all courses, updates the status and watched duration in all affected
+ * courses and saves them to storage.
+ */
+async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
+    const storageData = await getFromStorage(null);
+    const playlistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+
+    const videoDurationSeconds = parseDurationToSeconds(videoDuration);
+    const updatedCourses = {};
+
+    for (const playlistId of playlistIds) {
+        const course = storageData[playlistId];
+
+        // Check if the video exists in this course
+        if (course.videoWatchStatus && course.videoWatchStatus.hasOwnProperty(videoId)) {
+            const oldStatus = course.videoWatchStatus[videoId];
+            const newStatus = isChecked;
+
+            // Only update if the status has changed for this video in this course
+            if (oldStatus !== newStatus) {
+                course.videoWatchStatus[videoId] = newStatus;
+                let watchedSeconds =
+                    course.watchedDuration.hours * 3600 +
+                    course.watchedDuration.minutes * 60 +
+                    course.watchedDuration.seconds;
+
+                if (isChecked) watchedSeconds += videoDurationSeconds;
+                else watchedSeconds -= videoDurationSeconds;
+
+                course.watchedDuration = formatDuration(watchedSeconds);
+                updatedCourses[playlistId] = course;
+
+                if (playlistId === state.playlistId) {
+                    state.videoWatchStatus = course.videoWatchStatus;
+                    state.watchedDuration = course.watchedDuration;
+                }
+            }
+        }
+    }
+
+    chrome.storage.local.set(updatedCourses);
+    const coursesAffected = Object.keys(updatedCourses).length;
+    const syncMessage =
+        coursesAffected > 1 ? `Progress updated in ${coursesAffected} courses` : "Progress updated";
+
+    showToast(syncMessage);
 }
 
 async function renderWPProgressDiv({ signal }) {
@@ -1371,10 +1416,8 @@ async function updatePlaylistData() {
         isThereMoreVideos = false;
         for (const video of playlistVideos) {
             if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
-                let videoDuration;
-                if (video.querySelector(SELECTORS.videoDuration)) {
-                    videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
-                } else {
+                let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+                if (!videoDuration) {
                     videoDuration = (
                         await waitForElement({
                             selector: SELECTORS.videoDuration,
