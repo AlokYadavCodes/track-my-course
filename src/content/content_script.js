@@ -511,24 +511,16 @@ function setupCheckbox(video, pageType) {
 
     checkbox.addEventListener("click", async (e) => {
         const isChecked = e.target.checked;
-
-        let videoDuration;
-        try {
-            videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
-            if (!videoDuration) {
-                videoDuration = (
-                    await waitForElement({
-                        selector: SELECTORS.videoDuration,
-                        parentEl: video,
-                        signal: null,
-                    })
-                )?.textContent;
-            }
-        } catch (err) {
-            console.error("Could not determine video duration for synchronization:", err);
-            return;
+        let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+        if (!videoDuration) {
+            videoDuration = (
+                await waitForElement({
+                    selector: SELECTORS.videoDuration,
+                    parentEl: video,
+                    signal,
+                })
+            ).textContent;
         }
-
         await synchronizeVideoStatus(videoId, isChecked, videoDuration);
     });
 
@@ -539,17 +531,16 @@ function setupCheckbox(video, pageType) {
 /**
  * Synchronizes the watched status of a single video across ALL tracked courses.
  * It fetches all courses, updates the status and watched duration in all affected
- * courses, saves them to storage, and finally updates the current page's state/UI.
+ * courses and saves them to storage.
  */
 async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
     const storageData = await getFromStorage(null);
-    const allPlaylistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+    const playlistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
 
-    const durationSeconds = parseDurationToSeconds(videoDuration);
-    let updates = {};
-    let currentCourseUpdate = null;
+    const videoDurationSeconds = parseDurationToSeconds(videoDuration);
+    const updatedCourses = {};
 
-    for (const playlistId of allPlaylistIds) {
+    for (const playlistId of playlistIds) {
         const course = storageData[playlistId];
 
         // Check if the video exists in this course
@@ -565,44 +556,26 @@ async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
                     course.watchedDuration.minutes * 60 +
                     course.watchedDuration.seconds;
 
-                if (newStatus) {
-                    watchedSeconds += durationSeconds;
-                } else {
-                    watchedSeconds -= durationSeconds;
-                }
+                if (isChecked) watchedSeconds += videoDurationSeconds;
+                else watchedSeconds -= videoDurationSeconds;
 
-                watchedSeconds = Math.max(0, watchedSeconds);
                 course.watchedDuration = formatDuration(watchedSeconds);
-                updates[playlistId] = course;
+                updatedCourses[playlistId] = course;
 
                 if (playlistId === state.playlistId) {
-                    currentCourseUpdate = course;
+                    state.videoWatchStatus = course.videoWatchStatus;
+                    state.watchedDuration = course.watchedDuration;
                 }
             }
         }
     }
 
-    if (Object.keys(updates).length > 0) {
-        await chrome.storage.local.set(updates);
+    chrome.storage.local.set(updatedCourses);
+    const coursesAffected = Object.keys(updatedCourses).length;
+    const syncMessage =
+        coursesAffected > 1 ? `Progress updated in ${coursesAffected} courses` : "Progress updated";
 
-        // Update the current page's state and UI if it was affected.
-        if (currentCourseUpdate) {
-            // Manually update the global state object to reflect changes immediately
-            state.videoWatchStatus = currentCourseUpdate.videoWatchStatus;
-            state.watchedDuration = currentCourseUpdate.watchedDuration;
-
-            setToStorage();
-            refreshUI();
-        }
-
-        const coursesAffected = Object.keys(updates).length;
-        const syncMessage =
-            coursesAffected > 1
-                ? `Progress synchronized across ${coursesAffected} courses.`
-                : "Course progress updated.";
-
-        showToast(syncMessage);
-    }
+    showToast(syncMessage);
 }
 
 async function renderWPProgressDiv({ signal }) {
@@ -1443,10 +1416,8 @@ async function updatePlaylistData() {
         isThereMoreVideos = false;
         for (const video of playlistVideos) {
             if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
-                let videoDuration;
-                if (video.querySelector(SELECTORS.videoDuration)) {
-                    videoDuration = video.querySelector(SELECTORS.videoDuration).textContent;
-                } else {
+                let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+                if (!videoDuration) {
                     videoDuration = (
                         await waitForElement({
                             selector: SELECTORS.videoDuration,
