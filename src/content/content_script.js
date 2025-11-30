@@ -20,7 +20,7 @@ const SELECTORS = {
         progressDivWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info:has(yt-description-preview-view-model)",
         progressDivSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
-        courseTextEl: ".metadata-action-bar p",
+        courseTextEl: ".metadata-wrapper badge-shape",
         playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
         playlistNameEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model span",
@@ -1097,6 +1097,11 @@ async function updatePlaylistPageLayout(mediaQuery) {
     }
     if (startCourseBtn) {
         startCourseBtnTargetAnchor.insertAdjacentElement("afterend", startCourseBtn);
+        if (state.isYtCourse) {
+            if (startCourseBtnTargetAnchor == startCourseBtnSmallScreenRefEl)
+                startCourseBtn.style.margin = "6px 0px 10px 0px";
+            else startCourseBtn.style.margin = "-6px 0px 10px 0px";
+        }
     }
 }
 
