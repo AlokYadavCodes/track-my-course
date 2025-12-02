@@ -19,7 +19,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
     (details) => {
         const { url, tabId } = details;
 
-        if (url.includes("/watch") && url.includes("list=")) {
+        if (url.includes("/watch")) {
             sendMessage(tabId, {
                 action: "updateWatchPage",
                 playlistId: getPlaylistId(url),
