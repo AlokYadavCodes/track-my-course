@@ -35,6 +35,10 @@ const SELECTORS = {
                 ".metadata-wrapper > yt-dynamic-sizing-formatted-string #container yt-formatted-string",
         },
     },
+    homePage: {
+        gridContents: "ytd-rich-grid-renderer #contents",
+        refElement: "ytd-rich-grid-row, ytd-rich-item-renderer"
+    },
 };
 
 // --- STATE MANAGEMENT ---
@@ -61,6 +65,7 @@ const state = {
 const PAGE_TYPE = {
     WATCH: "watch",
     PLAYLIST: "playlist",
+    HOME: "home",
 };
 
 async function updateStateVariables({ signal }) {
@@ -91,6 +96,8 @@ if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
     state.currentPage = PAGE_TYPE.WATCH;
 } else if (currentURL.includes("playlist?list=")) {
     state.currentPage = PAGE_TYPE.PLAYLIST;
+} else if (currentURL === "https://www.youtube.com/" || (currentURL.includes("youtube.com/") && !currentURL.includes("/watch") && !currentURL.includes("/playlist") && !currentURL.includes("/shorts"))) {
+    state.currentPage = PAGE_TYPE.HOME;
 } else {
     state.currentPage = null;
 }
@@ -111,8 +118,14 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         await updateStateVariables({ signal });
 
         // Decide which update function to call based on the page type.
-        const updateFunction = pageType === PAGE_TYPE.WATCH ? updateWatchPage : updatePlaylistPage;
-        await updateFunction({ signal });
+        if (pageType === PAGE_TYPE.WATCH) {
+            await updateWatchPage({ signal });
+        } else if (pageType === PAGE_TYPE.PLAYLIST) {
+            await updatePlaylistPage({ signal });
+        } else if (pageType === PAGE_TYPE.HOME) {
+            await updateHomePage({ signal });
+        }
+
         toggleFocusModeUI(state.focusMode);
     } catch (err) {
         if (err.name !== "AbortError") {
@@ -229,6 +242,10 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
         }
         state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else if (request.action === "updateHomePage") {
+        await waitForNavigation();
+        await handleFullPageUpdate(PAGE_TYPE.HOME);
+        state.currentPage = PAGE_TYPE.HOME;
     } else if (request.action === "someOtherPage") {
         performCleanUp();
         state.currentPage = null;
@@ -1185,6 +1202,7 @@ function performCleanUp() {
     removeVideoCheckboxes();
     removeProgressDiv();
     removePPMediaQueryListener();
+    removeHomeBanner();
     if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
 }
 
@@ -1719,4 +1737,111 @@ function getCheckboxWrapper(page) {
     }
     wrapper.append(checkbox, svg);
     return wrapper;
+}
+
+async function updateHomePage({ signal }) {
+    const storageData = await getFromStorage(null);
+    const courses = Object.keys(storageData)
+        .filter(key => key !== "focusMode")
+        .map(key => ({ ...storageData[key], id: key }));
+
+    if (courses.length === 0) return;
+
+    const bannerContainer = document.createElement("div");
+    bannerContainer.className = "tmc-home-banner";
+
+    const header = document.createElement("h3");
+    header.textContent = "Your Courses";
+    header.className = "tmc-home-banner-header";
+    bannerContainer.appendChild(header);
+
+    const coursesWrapper = document.createElement("div");
+    coursesWrapper.className = "tmc-home-courses-wrapper";
+
+    courses.forEach(course => {
+        const card = createCourseCard(course);
+        coursesWrapper.appendChild(card);
+    });
+
+    bannerContainer.appendChild(coursesWrapper);
+
+    const gridContents = await waitForElement({
+        selector: SELECTORS.homePage.gridContents,
+        signal
+    });
+
+    if (signal.aborted) return;
+
+    const insertBanner = () => {
+        if (!gridContents.contains(bannerContainer) || gridContents.firstChild !== bannerContainer) {
+            gridContents.insertBefore(bannerContainer, gridContents.firstChild);
+        }
+    };
+
+    insertBanner();
+
+    const observer = new MutationObserver((mutations) => {
+        if (signal.aborted) {
+            observer.disconnect();
+            return;
+        }
+        insertBanner();
+    });
+
+    observer.observe(gridContents, { childList: true });
+
+    signal.addEventListener("abort", () => {
+        observer.disconnect();
+    });
+}
+
+function createCourseCard(course) {
+    const card = document.createElement("a");
+    card.className = "tmc-home-card";
+    card.href = `https://www.youtube.com/playlist?list=${course.id}`;
+
+    let percentage = 0;
+    if (course.totalDuration && (course.totalDuration.hours || course.totalDuration.minutes || course.totalDuration.seconds)) {
+        const watchedSec = (course.watchedDuration.hours * 3600) + (course.watchedDuration.minutes * 60) + course.watchedDuration.seconds;
+        const totalSec = (course.totalDuration.hours * 3600) + (course.totalDuration.minutes * 60) + course.totalDuration.seconds;
+        percentage = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
+    }
+
+    const thumbContainer = document.createElement("div");
+    thumbContainer.className = "tmc-card-thumbnail";
+    const img = document.createElement("img");
+    img.src = course.courseImgSrc || "";
+    thumbContainer.appendChild(img);
+
+    const info = document.createElement("div");
+    info.className = "tmc-card-info";
+
+    const title = document.createElement("div");
+    title.className = "tmc-card-title";
+    title.textContent = course.courseName || "Untitled Course";
+
+    const stats = document.createElement("div");
+    stats.className = "tmc-card-stats";
+    stats.textContent = `${percentage}% completed`;
+
+    const progressBg = document.createElement("div");
+    progressBg.className = "tmc-card-progress-bg";
+    const progressFill = document.createElement("div");
+    progressFill.className = "tmc-card-progress-fill";
+    progressFill.style.width = `${percentage}%`;
+    progressBg.appendChild(progressFill);
+
+    info.appendChild(title);
+    info.appendChild(stats);
+    info.appendChild(progressBg);
+
+    card.appendChild(thumbContainer);
+    card.appendChild(info);
+
+    return card;
+}
+
+function removeHomeBanner() {
+    const banner = document.querySelector(".tmc-home-banner");
+    if (banner) banner.remove();
 }

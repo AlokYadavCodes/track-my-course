@@ -1,0 +1,114 @@
+.tmc-home-banner {
+    width: 100%;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+}
+
+.tmc-home-banner-header {
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--yt-spec-text-primary, #0f0f0f);
+    margin-bottom: 16px;
+    padding-left: 8px;
+}
+
+.tmc-home-courses-wrapper {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 12px;
+    padding-left: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #909090 transparent;
+}
+
+.tmc-home-courses-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.tmc-home-courses-wrapper::-webkit-scrollbar-thumb {
+    background: #909090;
+    border-radius: 4px;
+}
+
+.tmc-home-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+    max-width: 300px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.tmc-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #333;
+    margin-bottom: 12px;
+}
+
+.tmc-card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.tmc-home-card:hover .tmc-card-thumbnail img {
+    transform: scale(1.05);
+}
+
+.tmc-card-info {
+    display: flex;
+    flex-direction: column;
+    padding-right: 24px;
+}
+
+.tmc-card-title {
+    font-family: "Roboto", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 22px;
+    color: var(--yt-spec-text-primary, #0f0f0f);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.tmc-card-stats {
+    font-size: 14px;
+    color: var(--yt-spec-text-secondary, #606060);
+    margin-bottom: 8px;
+}
+
+.tmc-card-progress-bg {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(0,0,0,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.tmc-card-progress-fill {
+    height: 100%;
+    background-color: #3ea6ff;
+}
+
+html[dark] .tmc-home-banner-header {
+    color: #f1f1f1;
+}
+html[dark] .tmc-card-title {
+    color: #f1f1f1;
+}
+html[dark] .tmc-card-stats {
+    color: #aaa;
+}
+html[dark] .tmc-card-progress-bg {
+    background-color: rgba(255,255,255,0.2);
+}
