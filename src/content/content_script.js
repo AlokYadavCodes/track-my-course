@@ -53,7 +53,7 @@ const state = {
 
     activePageUpdateController: null,
     investedTimeTrackerCleanup: null,
-    PPProgressDivPlacementHandler: null,
+    PPPlacementHandler: null,
     mediaQuery: null,
     playlistActions: null,
 };
@@ -180,7 +180,7 @@ async function updateWatchPage({ signal }) {
 }
 
 async function updatePlaylistPage({ signal }) {
-    state.isYtCourse = await checkIsYtCourse({ signal });
+    state.isYtCourse = await isYtCourse({ signal });
 
     if (!state.mediaQuery) {
         state.mediaQuery = window.matchMedia("(min-width: 1080px)");
@@ -1618,17 +1618,17 @@ async function getMoreVideos({ signal }) {
     });
 }
 
-async function checkIsYtCourse({ signal }) {
+async function isYtCourse({ signal }) {
     const performCheck = () => {
         const courseTextEl = document.querySelectorAll(SELECTORS.playlistPage.courseTextEl);
-        for (el of courseTextEl) {
+        for (const el of courseTextEl) {
             if (el?.textContent.toLowerCase() === "course") {
                 return { found: true, isCourse: true };
             }
         }
 
         const playlistTextEl = document.querySelectorAll(SELECTORS.playlistPage.playlistTextEl);
-        for (el of playlistTextEl) {
+        for (const el of playlistTextEl) {
             if (
                 el?.textContent.toLowerCase() === "playlist" ||
                 el?.textContent.toLowerCase() === "podcast"
@@ -1650,6 +1650,7 @@ async function checkIsYtCourse({ signal }) {
         const observer = new MutationObserver(() => {
             const subsequentCheck = performCheck();
             if (subsequentCheck.found) {
+                clearTimeout(timeoutId);
                 observer.disconnect();
                 resolve(subsequentCheck.isCourse);
             }
@@ -1741,10 +1742,10 @@ function initializeInvestedTimeTracker({ signal }) {
 }
 
 function removePPMediaQueryListener() {
-    if (state.mediaQuery && state.PPProgressDivPlacementHandler) {
-        state.mediaQuery.removeEventListener("change", state.PPProgressDivPlacementHandler);
+    if (state.mediaQuery && state.PPPlacementHandler) {
+        state.mediaQuery.removeEventListener("change", state.PPPlacementHandler);
         state.mediaQuery = null;
-        state.PPProgressDivPlacementHandler = null;
+        state.PPPlacementHandler = null;
     }
 }
 
