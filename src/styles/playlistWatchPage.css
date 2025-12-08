@@ -26,10 +26,15 @@
     --cancel-delete-bg: #0f0f0f;
     --cancel-delete-text: #f1f1f1;
     --popup-button-border: #88888833;
+
+    --course-panel-bg: #fff;
+    --course-panel-border: rgba(0, 0, 0, 0.1);
+    --course-item-bg: rgba(0, 0, 0, 0.05);
+    --course-item-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
 html[dark] {
-    --text-primary: #fff;
+    --text-primary: #f1f1f1;
     --start-button-text: #0f0f0f;
     --start-button-bg: #f1f1f1;
     --start-button-hover-bg: #d9d9d9;
@@ -56,6 +61,11 @@ html[dark] {
     --cancel-delete-bg: #f1f1f1;
     --cancel-delete-text: #0f0f0f;
     --popup-button-border: #cccccc33;
+
+    --course-panel-bg: #212121;
+    --course-panel-border: rgba(255, 255, 255, 0.2);
+    --course-item-bg: rgba(255, 255, 255, 0.1);
+    --course-item-hover-bg: rgba(255, 255, 255, 0.2);
 }
 
 .tmc-wp-start-course-btn {
@@ -283,4 +293,79 @@ html[dark] {
 .tmc-wp-progress-div .tmc-cancel-delete {
     background-color: var(--cancel-delete-bg);
     color: var(--cancel-delete-text);
+}
+
+/* course list styling */
+.tmc-video-course-panel {
+    width: 100%;
+    background-color: var(--course-panel-bg);
+    border: 1px solid var(--course-panel-border, rgb(0, 0, 0, 0.1));
+    border-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tmc-video-course-header {
+    font-size: 20px;
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tmc-video-course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tmc-video-course-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    background-color: var(--course-item-bg);
+    color: var(--text-primary);
+
+    text-decoration: none;
+    transition: background-color 0.15s;
+}
+
+.tmc-video-course-item:hover {
+    background: var(--course-item-hover-bg);
+}
+
+.tmc-video-course-name {
+    font-size: 14px;
+    font-weight: 500;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    margin-right: 10px;
+}
+
+.tmc-video-course-icon svg {
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.tmc-video-course-item:hover .tmc-video-course-icon svg {
+    opacity: 0.85;
+}
+
+/* single video checkbox */
+.tmc-video-watch-checkbox-wrapper {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 12px;
+    transform: scale(0.8);
 }
