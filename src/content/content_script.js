@@ -57,7 +57,7 @@ const state = {
 
     activePageUpdateController: null,
     investedTimeTrackerCleanup: null,
-    PPProgressDivPlacementHandler: null,
+    PPPlacementHandler: null,
     mediaQuery: null,
     playlistActions: null,
 };
@@ -96,12 +96,14 @@ if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
     state.currentPage = PAGE_TYPE.WATCH;
 } else if (currentURL.includes("playlist?list=")) {
     state.currentPage = PAGE_TYPE.PLAYLIST;
+} else if (currentURL.includes("/watch?v=")) {
+    renderVideoCourseMatches();
 } else if (currentURL === "https://www.youtube.com/" || (currentURL.includes("youtube.com/") && !currentURL.includes("/watch") && !currentURL.includes("/playlist") && !currentURL.includes("/shorts"))) {
     state.currentPage = PAGE_TYPE.HOME;
 } else {
     state.currentPage = null;
 }
-handleFullPageUpdate();
+if (state.currentPage !== null) handleFullPageUpdate();
 
 // --- EVENT HANDLING & PAGE UPDATES ---
 
@@ -187,10 +189,11 @@ async function updateWatchPage({ signal }) {
             await renderWPStartCourseBtn({ signal });
         }
     }
+    await renderVideoCourseMatches({ signal });
 }
 
 async function updatePlaylistPage({ signal }) {
-    state.isYtCourse = await checkIsYtCourse({ signal });
+    state.isYtCourse = await isYtCourse({ signal });
 
     if (!state.mediaQuery) {
         state.mediaQuery = window.matchMedia("(min-width: 1080px)");
@@ -221,6 +224,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     }
 
     if (request.action === "updateWatchPage") {
+        const isStandaloneVideo = request.playlistId === null;
+        if (isStandaloneVideo) {
+            performCleanUp();
+            state.currentPage = null;
+            await renderVideoCourseMatches();
+            return;
+        }
         const isNewPlaylist =
             !(state.currentPage === PAGE_TYPE.WATCH) || state.playlistId !== request.playlistId;
 
@@ -231,6 +241,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             // this happens when video is changed on the same playlist
             // youtube changes content in the same html structure which removes checkboxes. Hence again adding it.
             await handlePartialUpdate();
+            await renderVideoCourseMatches();
         }
         state.currentPage = PAGE_TYPE.WATCH;
     } else if (request.action === "updatePlaylistPage") {
@@ -266,20 +277,27 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         return;
     }
 
-    if (!Object.keys(changes).includes(state.playlistId)) return;
-
     const currentURL = window.location.href;
 
     if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
         state.currentPage = PAGE_TYPE.WATCH;
     } else if (currentURL.includes("playlist?list=")) {
         state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else if (currentURL.includes("watch?v=")) {
+        state.currentPage = null;
+        renderVideoCourseMatches();
     } else {
         state.currentPage = null;
     }
 
-    const change = changes[state.playlistId];
-    if (!change.oldValue || !change.newValue) {
+    const currentPlaylistUpdated = changes.hasOwnProperty(state.playlistId);
+    if (!currentPlaylistUpdated && state.currentPage === PAGE_TYPE.WATCH) {
+        renderVideoCourseMatches();
+    }
+    if (!currentPlaylistUpdated || state.currentPage === null) return;
+
+    const { oldValue, newValue } = changes[state.playlistId];
+    if (!oldValue || !newValue) {
         // course started or deleted
         handleFullPageUpdate();
     } else {
@@ -573,7 +591,7 @@ async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
                     course.watchedDuration.seconds;
 
                 if (isChecked) watchedSeconds += videoDurationSeconds;
-                else watchedSeconds -= videoDurationSeconds;
+                else watchedSeconds = Math.max(0, watchedSeconds - videoDurationSeconds);
 
                 course.watchedDuration = formatDuration(watchedSeconds);
                 updatedCourses[playlistId] = course;
@@ -923,6 +941,41 @@ async function renderPPProgressDiv({ signal }) {
     });
 }
 
+async function renderVideoCourseMatches({ signal } = {}) {
+    const isCurrentPlaylistTracked = await isPlaylistTracked(getPlaylistId(window.location.href));
+    const videoId = getVideoId(window.location.href);
+    let matchedCourses = await getCoursesContainingVideo(videoId);
+    if (
+        (isCurrentPlaylistTracked && matchedCourses.length === 1) ||
+        (!isCurrentPlaylistTracked && matchedCourses.length === 0)
+    ) {
+        removeVideoCourseList();
+        removeVideoWatchCheckbox();
+        return;
+    }
+    if (!signal) {
+        if (state.activePageUpdateController) {
+            state.activePageUpdateController.abort();
+        }
+        state.activePageUpdateController = new AbortController();
+        signal = state.activePageUpdateController.signal;
+    }
+
+    if (isCurrentPlaylistTracked) {
+        console.log("first load, current playlist tracked");
+        matchedCourses = matchedCourses.filter(
+            (c) => c.playlistId !== getPlaylistId(window.location.href)
+        );
+        renderVideoCourseList({ signal, courses: matchedCourses });
+    } else {
+        console.log("first load, current playlist not tracked");
+        const isWatched = matchedCourses.some((c) => c.isWatched);
+
+        renderVideoCourseList({ signal, courses: matchedCourses });
+        renderVideoWatchCheckbox({ signal, isWatched, videoId });
+    }
+}
+
 async function renderPlaylistScanning({ signal }) {
     if (signal.aborted) throw createAbortError();
 
@@ -1194,6 +1247,20 @@ function removeVideoCheckboxes() {
         allCheckboxes.forEach((checkbox) => {
             checkbox.remove();
         });
+    }
+}
+
+function removeVideoCourseList() {
+    const container = document.querySelector(".tmc-video-course-panel");
+    if (container) {
+        container.remove();
+    }
+}
+
+function removeVideoWatchCheckbox() {
+    const checkboxWrapper = document.querySelector(".tmc-video-watch-checkbox-wrapper");
+    if (checkboxWrapper) {
+        checkboxWrapper.remove();
     }
 }
 
@@ -1569,17 +1636,17 @@ async function getMoreVideos({ signal }) {
     });
 }
 
-async function checkIsYtCourse({ signal }) {
+async function isYtCourse({ signal }) {
     const performCheck = () => {
         const courseTextEl = document.querySelectorAll(SELECTORS.playlistPage.courseTextEl);
-        for (el of courseTextEl) {
+        for (const el of courseTextEl) {
             if (el?.textContent.toLowerCase() === "course") {
                 return { found: true, isCourse: true };
             }
         }
 
         const playlistTextEl = document.querySelectorAll(SELECTORS.playlistPage.playlistTextEl);
-        for (el of playlistTextEl) {
+        for (const el of playlistTextEl) {
             if (
                 el?.textContent.toLowerCase() === "playlist" ||
                 el?.textContent.toLowerCase() === "podcast"
@@ -1601,6 +1668,7 @@ async function checkIsYtCourse({ signal }) {
         const observer = new MutationObserver(() => {
             const subsequentCheck = performCheck();
             if (subsequentCheck.found) {
+                clearTimeout(timeoutId);
                 observer.disconnect();
                 resolve(subsequentCheck.isCourse);
             }
@@ -1626,6 +1694,12 @@ async function checkIsYtCourse({ signal }) {
             signal.addEventListener("abort", abortListener, { once: true });
         }
     });
+}
+
+async function isPlaylistTracked(playlistId) {
+    if (!playlistId) return;
+    const data = await chrome.storage.local.get(playlistId);
+    return Boolean(data[playlistId]);
 }
 
 function initializeInvestedTimeTracker({ signal }) {
@@ -1686,10 +1760,10 @@ function initializeInvestedTimeTracker({ signal }) {
 }
 
 function removePPMediaQueryListener() {
-    if (state.mediaQuery && state.PPProgressDivPlacementHandler) {
-        state.mediaQuery.removeEventListener("change", state.PPProgressDivPlacementHandler);
+    if (state.mediaQuery && state.PPPlacementHandler) {
+        state.mediaQuery.removeEventListener("change", state.PPPlacementHandler);
         state.mediaQuery = null;
-        state.PPProgressDivPlacementHandler = null;
+        state.PPPlacementHandler = null;
     }
 }
 
@@ -1737,6 +1811,123 @@ function getCheckboxWrapper(page) {
     }
     wrapper.append(checkbox, svg);
     return wrapper;
+}
+
+async function getCoursesContainingVideo(videoId) {
+    if (!videoId) return [];
+
+    const storageData = await getFromStorage(null);
+    const playlistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+
+    const matchedCourses = [];
+
+    for (const playlistId of playlistIds) {
+        const course = storageData[playlistId];
+        if (!course || !course.videoWatchStatus) continue;
+
+        if (course.videoWatchStatus.hasOwnProperty(videoId)) {
+            matchedCourses.push({
+                playlistId,
+                courseName: course.courseName,
+                isWatched: course.videoWatchStatus[videoId],
+            });
+        }
+    }
+
+    return matchedCourses;
+}
+
+async function renderVideoCourseList({ signal, courses }) {
+    console.log("Rendering video course list:", courses);
+    if (signal?.aborted) return;
+
+    const secondaryCol = await waitForElement({ selector: "#secondary-inner", signal });
+    if (!secondaryCol) return;
+
+    const isCurrentPlaylistTracked = await isPlaylistTracked(getPlaylistId(window.location.href));
+    // Create or reset the container
+    let container = document.querySelector(".tmc-video-course-panel");
+    if (!container) {
+        container = document.createElement("div");
+        container.className = "tmc-video-course-panel";
+        secondaryCol.prepend(container);
+    } else {
+        container.innerHTML = "";
+    }
+    // Header
+    const header = document.createElement("div");
+    header.className = "tmc-video-course-header";
+    const count = courses.length;
+    header.textContent = `${isCurrentPlaylistTracked ? "Also included in" : "Included in"} ${count > 1 ? "these" : "this"} ${count > 1 ? "courses" : "course"}`;
+    container.appendChild(header);
+
+    // List
+    const list = document.createElement("div");
+    list.className = "tmc-video-course-list";
+
+    courses.forEach((course) => {
+        const item = document.createElement("a");
+        item.className = "tmc-video-course-item";
+        item.href = `https://www.youtube.com/playlist?list=${course.playlistId}`;
+        item.target = "_blank";
+        item.title = `Open Course: ${course.courseName}`;
+
+        const name = document.createElement("span");
+        name.className = "tmc-video-course-name";
+        name.textContent = course.courseName;
+
+        const icon = document.createElement("span");
+        icon.className = "tmc-video-course-icon";
+        icon.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 
+                2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+        `;
+
+        item.appendChild(name);
+        item.appendChild(icon);
+        list.appendChild(item);
+    });
+
+    container.appendChild(list);
+}
+
+async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
+    if (signal?.aborted) return;
+
+    const titleContainer = await waitForElement({
+        selector: "#title > h1",
+        signal,
+    });
+    if (!titleContainer) return;
+
+    const existingWrapper = titleContainer.querySelector(".tmc-video-watch-checkbox-wrapper");
+    if (existingWrapper) {
+        const existingCheckbox = existingWrapper.querySelector("input[type=checkbox]");
+        existingCheckbox.checked = isWatched;
+        return;
+    }
+
+    const checkboxWrapper = getCheckboxWrapper(PAGE_TYPE.WATCH);
+    checkboxWrapper.classList.add("tmc-video-watch-checkbox-wrapper");
+
+    const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
+    checkbox.id = videoId;
+    checkbox.checked = isWatched;
+
+    checkbox.addEventListener("click", async (e) => {
+        const isChecked = e.target.checked;
+        const videoDurationEl = document.querySelector(".ytp-time-duration");
+        const videoDuration = videoDurationEl ? videoDurationEl.textContent : "0:00";
+
+        await synchronizeVideoStatus(videoId, isChecked, videoDuration);
+    });
+
+    titleContainer.appendChild(checkboxWrapper);
 }
 
 async function updateHomePage({ signal }) {
