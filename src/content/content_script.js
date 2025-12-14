@@ -35,6 +35,10 @@ const SELECTORS = {
                 ".metadata-wrapper > yt-dynamic-sizing-formatted-string #container yt-formatted-string",
         },
     },
+    homePage: {
+        homeFeed: "ytd-rich-grid-renderer #contents",
+        gridRenderer: "ytd-rich-grid-renderer",
+    },
 };
 
 // --- STATE MANAGEMENT ---
@@ -61,6 +65,7 @@ const state = {
 const PAGE_TYPE = {
     WATCH: "watch",
     PLAYLIST: "playlist",
+    HOME: "home",
 };
 
 async function updateStateVariables({ signal }) {
@@ -93,6 +98,8 @@ if (currentURL.includes("watch?v=") && currentURL.includes("list=")) {
     state.currentPage = PAGE_TYPE.PLAYLIST;
 } else if (currentURL.includes("/watch?v=")) {
     renderVideoCourseMatches();
+} else if (currentURL === "https://www.youtube.com/") {
+    state.currentPage = PAGE_TYPE.HOME;
 } else {
     state.currentPage = null;
 }
@@ -110,12 +117,14 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         const { signal } = state.activePageUpdateController;
 
         performCleanUp();
-        await updateStateVariables({ signal });
+        if (pageType === PAGE_TYPE.WATCH || pageType === PAGE_TYPE.PLAYLIST)
+            await updateStateVariables({ signal });
+        if (pageType === PAGE_TYPE.WATCH) toggleFocusModeUI(state.focusMode);
 
         // Decide which update function to call based on the page type.
         if (pageType === PAGE_TYPE.WATCH) await updateWatchPage({ signal });
         else if (pageType === PAGE_TYPE.PLAYLIST) await updatePlaylistPage({ signal });
-        toggleFocusModeUI(state.focusMode);
+        else if (pageType === PAGE_TYPE.HOME) await renderHomeCoursesSection({ signal });
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error(`Unexpected error during full update of ${pageType} page:`, err);
@@ -240,6 +249,10 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
             await handleFullPageUpdate(PAGE_TYPE.PLAYLIST);
         }
         state.currentPage = PAGE_TYPE.PLAYLIST;
+    } else if (request.action === "updateHomePage") {
+        await waitForNavigation();
+        await handleFullPageUpdate(PAGE_TYPE.HOME);
+        state.currentPage = PAGE_TYPE.HOME;
     } else if (request.action === "someOtherPage") {
         performCleanUp();
         state.currentPage = null;
@@ -269,6 +282,10 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     } else if (currentURL.includes("watch?v=")) {
         state.currentPage = null;
         renderVideoCourseMatches();
+    } else if (currentURL === "https://www.youtube.com/") {
+        state.currentPage = PAGE_TYPE.HOME;
+        updateHomeCoursesContent();
+        return;
     } else {
         state.currentPage = null;
     }
@@ -1247,11 +1264,16 @@ function removeVideoWatchCheckbox() {
     }
 }
 
+function removeHomeCoursesSection() {
+    document.querySelector(".tmc-home-section")?.remove();
+}
+
 function performCleanUp() {
     removeStartCourseBtn();
     removeVideoCheckboxes();
     removeProgressDiv();
     removePPMediaQueryListener();
+    removeHomeCoursesSection();
     if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
 }
 
@@ -1910,4 +1932,155 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
     });
 
     titleContainer.appendChild(checkboxWrapper);
+}
+
+async function renderHomeCoursesSection({ signal }) {
+    const storageData = await getFromStorage(null);
+    const courses = Object.entries(storageData)
+        .filter(([key]) => key !== "focusMode")
+        .map(([key, value]) => ({ ...value, id: key }));
+
+    if (courses.length === 0 || signal.aborted) return;
+
+    const coursesSection = document.createElement("div");
+    coursesSection.className = "tmc-home-section";
+
+    const sectionTitle = document.createElement("h3");
+    sectionTitle.textContent = "Your Courses";
+    sectionTitle.className = "tmc-home-section-title";
+
+    const coursesScroller = document.createElement("div");
+    coursesScroller.className = "tmc-home-courses-scroller";
+
+    courses.forEach((course) => {
+        const card = createCourseCard(course);
+        coursesScroller.appendChild(card);
+    });
+
+    coursesSection.append(sectionTitle, coursesScroller);
+
+    const [homeFeed, gridRenderer] = await Promise.all([
+        waitForElement({
+            selector: SELECTORS.homePage.homeFeed,
+            signal,
+        }),
+        waitForElement({
+            selector: SELECTORS.homePage.gridRenderer,
+            signal,
+        }),
+    ]);
+
+    if (signal.aborted) return;
+
+    const ensureInserted = () => {
+        if (homeFeed.firstChild !== coursesSection) {
+            homeFeed.insertBefore(coursesSection, homeFeed.firstChild);
+        }
+    };
+
+    const updateVisibility = () => {
+        const isFiltered = gridRenderer.hasAttribute("is-filtered-feed");
+        coursesSection.style.display = isFiltered ? "none" : "block";
+    };
+
+    ensureInserted();
+    updateVisibility();
+
+    const feedObserver = new MutationObserver(() => {
+        if (signal.aborted) {
+            feedObserver.disconnect();
+            return;
+        }
+        ensureInserted();
+    });
+
+    feedObserver.observe(homeFeed, { childList: true });
+
+    const filterObserver = new MutationObserver(() => {
+        if (signal.aborted) {
+            filterObserver.disconnect();
+            return;
+        }
+        updateVisibility();
+    });
+
+    filterObserver.observe(gridRenderer, {
+        attributes: true,
+        attributeFilter: ["is-filtered-feed"],
+    });
+
+    signal.addEventListener("abort", () => {
+        feedObserver.disconnect();
+        filterObserver.disconnect();
+    });
+}
+
+function createCourseCard(course) {
+    const card = document.createElement("a");
+    card.className = "tmc-home-course-card";
+    card.href = `https://www.youtube.com/playlist?list=${course.id}`;
+
+    const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
+
+    const totalSec = toSeconds(course.totalDuration);
+    const watchedSec = toSeconds(course.watchedDuration);
+    const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
+
+    const thumbnail = document.createElement("div");
+    thumbnail.className = "tmc-home-course-card-thumbnail";
+    const img = document.createElement("img");
+    img.src = course.courseImgSrc || "";
+    thumbnail.appendChild(img);
+
+    const info = document.createElement("div");
+    info.className = "tmc-home-course-card-info";
+
+    const title = document.createElement("div");
+    title.className = "tmc-home-course-card-title";
+    title.textContent = course.courseName || "Untitled Course";
+
+    const stats = document.createElement("div");
+    stats.className = "tmc-home-course-card-stats";
+    stats.textContent = `${progressPercent}% completed`;
+
+    const progressBg = document.createElement("div");
+    progressBg.className = "tmc-home-course-card-progress-bg";
+    const progressFill = document.createElement("div");
+    progressFill.className = "tmc-home-course-card-progress-fill";
+    progressFill.style.width = `${progressPercent}%`;
+    progressBg.appendChild(progressFill);
+
+    info.append(title, stats, progressBg);
+    card.append(thumbnail, info);
+
+    return card;
+}
+
+async function updateHomeCoursesContent({ signal } = {}) {
+    if (!signal) {
+        if (state.activePageUpdateController) {
+            state.activePageUpdateController.abort();
+        }
+        state.activePageUpdateController = new AbortController();
+        signal = state.activePageUpdateController.signal;
+    }
+    const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
+    if (!homeCoursesScroller) {
+        renderHomeCoursesSection({ signal });
+        return;
+    }
+
+    const storageData = await getFromStorage(null);
+    const courses = Object.entries(storageData)
+        .filter(([key]) => key !== "focusMode")
+        .map(([key, value]) => ({ ...value, id: key }));
+    if (courses.length === 0) {
+        removeHomeCoursesSection();
+        return;
+    }
+
+    homeCoursesScroller.innerHTML = "";
+    for (const course of courses) {
+        homeCoursesScroller.appendChild(createCourseCard(course));
+    }
 }

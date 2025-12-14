@@ -1,0 +1,139 @@
+:root {
+    --tmc-text-primary: #0f0f0f;
+    --tmc-text-secondary: #606060;
+
+    --tmc-divider: rgba(0, 0, 0, 0.1);
+
+    --tmc-hover-surface: rgba(0, 0, 0, 0.08);
+
+    --tmc-progress-bg: rgba(0, 0, 0, 0.1);
+    --tmc-progress-fill: #065fd4;
+}
+
+html[dark] {
+    --tmc-text-primary: #f1f1f1;
+    --tmc-text-secondary: #aaa;
+
+    --tmc-divider: rgba(255, 255, 255, 0.2);
+    --tmc-hover-surface: rgba(255, 255, 255, 0.08);
+
+    --tmc-progress-bg: rgba(255, 255, 255, 0.2);
+    --tmc-progress-fill: #3ea6ff;
+}
+
+.tmc-home-section {
+    width: 100%;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+    border-bottom: 1px solid var(--tmc-divider);
+}
+
+.tmc-home-section-title {
+    font-family: "YouTube Sans", "Roboto", sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--tmc-text-primary);
+    padding-left: 8px;
+}
+
+.tmc-home-courses-scroller {
+    display: flex;
+    overflow-x: auto;
+    gap: 18px;
+    padding: 16px;
+    scrollbar-width: none;
+}
+
+.tmc-home-courses-scroller::-webkit-scrollbar {
+    display: none;
+}
+
+.tmc-home-course-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 300px;
+    max-width: 300px;
+    text-decoration: none;
+    color: inherit;
+
+    --hover-gap: 12px;
+}
+
+.tmc-home-course-card::before {
+    content: "";
+    position: absolute;
+    top: calc(-1 * var(--hover-gap));
+    left: calc(-1 * var(--hover-gap));
+    right: calc(-1 * var(--hover-gap));
+    bottom: calc(-1 * var(--hover-gap));
+
+    background-color: var(--tmc-hover-surface);
+    border-radius: 16px;
+
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    pointer-events: none;
+}
+
+.tmc-home-course-card:hover::before {
+    opacity: 1;
+}
+
+.tmc-home-course-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #333;
+    margin-bottom: 12px;
+}
+
+.tmc-home-course-card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
+    transform: scale(1.02);
+}
+
+.tmc-home-course-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.tmc-home-course-card-title {
+    font-family: "Roboto", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 22px;
+    color: var(--tmc-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+}
+
+.tmc-home-course-card-stats {
+    font-size: 14px;
+    color: var(--tmc-text-secondary);
+    margin-bottom: 8px;
+}
+
+.tmc-home-course-card-progress-bg {
+    width: 100%;
+    height: 4px;
+    background-color: var(--tmc-progress-bg);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.tmc-home-course-card-progress-fill {
+    height: 100%;
+    background-color: var(--tmc-progress-fill);
+}
