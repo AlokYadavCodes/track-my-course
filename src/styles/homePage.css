@@ -1,48 +1,88 @@
-.tmc-home-banner {
+:root {
+    --tmc-text-primary: #0f0f0f;
+    --tmc-text-secondary: #606060;
+
+    --tmc-divider: rgba(0, 0, 0, 0.1);
+
+    --tmc-hover-surface: rgba(0, 0, 0, 0.08);
+
+    --tmc-progress-bg: rgba(0, 0, 0, 0.1);
+    --tmc-progress-fill: #065fd4;
+}
+
+html[dark] {
+    --tmc-text-primary: #f1f1f1;
+    --tmc-text-secondary: #aaa;
+
+    --tmc-divider: rgba(255, 255, 255, 0.2);
+    --tmc-hover-surface: rgba(255, 255, 255, 0.08);
+
+    --tmc-progress-bg: rgba(255, 255, 255, 0.2);
+    --tmc-progress-fill: #3ea6ff;
+}
+
+.tmc-home-section {
     width: 100%;
     margin-bottom: 24px;
     display: flex;
     flex-direction: column;
     background-color: transparent;
+    border-bottom: 1px solid var(--tmc-divider);
 }
 
-.tmc-home-banner-header {
+.tmc-home-section-title {
     font-family: "YouTube Sans", "Roboto", sans-serif;
     font-size: 20px;
     font-weight: 700;
-    color: var(--yt-spec-text-primary, #0f0f0f);
-    margin-bottom: 16px;
+    color: var(--tmc-text-primary);
     padding-left: 8px;
 }
 
-.tmc-home-courses-wrapper {
+.tmc-home-courses-scroller {
     display: flex;
     overflow-x: auto;
-    gap: 16px;
-    padding-bottom: 12px;
-    padding-left: 8px;
-    scrollbar-width: thin;
-    scrollbar-color: #909090 transparent;
+    gap: 18px;
+    padding: 16px;
+    scrollbar-width: none;
 }
 
-.tmc-home-courses-wrapper::-webkit-scrollbar {
-    height: 8px;
-}
-.tmc-home-courses-wrapper::-webkit-scrollbar-thumb {
-    background: #909090;
-    border-radius: 4px;
+.tmc-home-courses-scroller::-webkit-scrollbar {
+    display: none;
 }
 
-.tmc-home-card {
+.tmc-home-course-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    min-width: 300px;
+    flex: 0 0 300px;
     max-width: 300px;
     text-decoration: none;
-    cursor: pointer;
+    color: inherit;
+
+    --hover-gap: 12px;
 }
 
-.tmc-card-thumbnail {
+.tmc-home-course-card::before {
+    content: "";
+    position: absolute;
+    top: calc(-1 * var(--hover-gap));
+    left: calc(-1 * var(--hover-gap));
+    right: calc(-1 * var(--hover-gap));
+    bottom: calc(-1 * var(--hover-gap));
+
+    background-color: var(--tmc-hover-surface);
+    border-radius: 16px;
+
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+    pointer-events: none;
+}
+
+.tmc-home-course-card:hover::before {
+    opacity: 1;
+}
+
+.tmc-home-course-card-thumbnail {
     width: 100%;
     aspect-ratio: 16 / 9;
     border-radius: 12px;
@@ -51,64 +91,49 @@
     margin-bottom: 12px;
 }
 
-.tmc-card-thumbnail img {
+.tmc-home-course-card-thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.2s ease;
 }
 
-.tmc-home-card:hover .tmc-card-thumbnail img {
-    transform: scale(1.05);
+.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
+    transform: scale(1.02);
 }
 
-.tmc-card-info {
+.tmc-home-course-card-info {
     display: flex;
     flex-direction: column;
-    padding-right: 24px;
 }
 
-.tmc-card-title {
+.tmc-home-course-card-title {
     font-family: "Roboto", sans-serif;
     font-size: 16px;
     font-weight: 500;
     line-height: 22px;
-    color: var(--yt-spec-text-primary, #0f0f0f);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    color: var(--tmc-text-primary);
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
     margin-bottom: 6px;
 }
 
-.tmc-card-stats {
+.tmc-home-course-card-stats {
     font-size: 14px;
-    color: var(--yt-spec-text-secondary, #606060);
+    color: var(--tmc-text-secondary);
     margin-bottom: 8px;
 }
 
-.tmc-card-progress-bg {
+.tmc-home-course-card-progress-bg {
     width: 100%;
     height: 4px;
-    background-color: rgba(0,0,0,0.1);
+    background-color: var(--tmc-progress-bg);
     border-radius: 2px;
     overflow: hidden;
 }
 
-.tmc-card-progress-fill {
+.tmc-home-course-card-progress-fill {
     height: 100%;
-    background-color: #3ea6ff;
-}
-
-html[dark] .tmc-home-banner-header {
-    color: #f1f1f1;
-}
-html[dark] .tmc-card-title {
-    color: #f1f1f1;
-}
-html[dark] .tmc-card-stats {
-    color: #aaa;
-}
-html[dark] .tmc-card-progress-bg {
-    background-color: rgba(255,255,255,0.2);
+    background-color: var(--tmc-progress-fill);
 }

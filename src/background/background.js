@@ -29,9 +29,9 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
                 action: "updatePlaylistPage",
                 playlistId: getPlaylistId(url),
             });
-        } else if (url === "https://www.youtube.com/" || (url.includes("youtube.com/") && !url.includes("/watch") && !url.includes("/playlist") && !url.includes("/shorts"))) {
+        } else if (url === "https://www.youtube.com/") {
             sendMessage(tabId, {
-                action: "updateHomePage"
+                action: "updateHomePage",
             });
         } else {
             sendMessage(tabId, { action: "someOtherPage" });
