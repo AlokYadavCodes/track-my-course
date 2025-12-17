@@ -83,12 +83,14 @@ html[dark] {
 }
 
 .tmc-home-course-card-thumbnail {
+    display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
     border-radius: 12px;
     overflow: hidden;
     background-color: #333;
     margin-bottom: 12px;
+    text-decoration: none;
 }
 
 .tmc-home-course-card-thumbnail img {
@@ -102,9 +104,42 @@ html[dark] {
     transform: scale(1.02);
 }
 
+.tmc-home-course-card-thumbnail::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    transform: translate(-50%, -50%) scale(0.8);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    
+    background-color: rgba(0, 0, 0, 0.7);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px;
+    
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.0, 0.0, 0.2, 1);
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.tmc-home-course-card:hover .tmc-home-course-card-thumbnail::after {
+    opacity: 1;
+    transform: translateY(2px);
+}
+
+.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
+    filter: brightness(0.9);
+}
+
 .tmc-home-course-card-info {
     display: flex;
     flex-direction: column;
+    text-decoration: none;
+    color: inherit;
 }
 
 .tmc-home-course-card-title {

@@ -111,6 +111,7 @@ function createCourseElement(courseId, course) {
     const courseElement = document.createElement("div");
     courseElement.className = "course";
     courseElement.dataset.courseId = courseId;
+    courseElement.dataset.lastWatchedVideoId = course.lastWatchedVideoId || '';
 
     // Course content container
     const content = document.createElement("div");
@@ -239,9 +240,13 @@ function addClickListeners() {
             const courseId = course.dataset.courseId;
             if (!courseId) return;
 
-            const playlistUrl = `https://www.youtube.com/playlist?list=${courseId}`;
+            let link = `list=${course.dataset.courseId}`;
+            link = ((target.closest(".course-img")) && (course.dataset.lastWatchedVideoId))
+                ? `watch?v=${course.dataset.lastWatchedVideoId}&${link}`
+                : `playlist?${link}`
+            const url = `https://www.youtube.com/${link}`;
 
-            window.open(playlistUrl, "_blank", "noopener,noreferrer");
+            window.open(url, "_blank", "noopener,noreferrer");
         }
     });
 }

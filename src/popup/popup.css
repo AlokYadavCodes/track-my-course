@@ -218,12 +218,39 @@ input:checked + .slider:before {
 }
 
 .course-img {
+    position: relative;
+    cursor: pointer;
     width: 6.25rem;
     height: 3.5rem;
     overflow: hidden;
     border-radius: 0.5rem;
     flex-shrink: 0;
     background-color: var(--border-primary);
+}
+
+.course-img::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+
+    background-color: rgba(0, 0, 0, 0.6);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 16px;
+
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.course:hover .course-img::after {
+    opacity: 1;
 }
 
 .course-img img {

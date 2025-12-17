@@ -45,6 +45,7 @@ const SELECTORS = {
 const state = {
     playlistId: null,
     videoWatchStatus: {},
+    lastWatchedVideoId: null,
     totalDuration: { hours: 0, minutes: 0, seconds: 0 },
     watchedDuration: { hours: 0, minutes: 0, seconds: 0 },
     investedTime: { hours: 0, minutes: 0, seconds: 0 },
@@ -85,6 +86,7 @@ async function updateStateVariables({ signal }) {
     state.watchedDuration = courseData.watchedDuration ?? {
         ...defaultDuration,
     };
+    state.lastWatchedVideoId = courseData.lastWatchedVideoId || null;
     state.investedTime = courseData.investedTime ?? { ...defaultDuration };
     state.courseImgSrc = courseData.courseImgSrc ?? null;
     state.courseName = courseData.courseName ?? null;
@@ -172,6 +174,8 @@ async function updateWatchPage({ signal }) {
         state.investedTimeTrackerCleanup = initializeInvestedTimeTracker({
             signal,
         });
+        state.lastWatchedVideoId = getVideoId(window.location.href);
+        setToStorage();
 
         // Populate the newly created UI with data.
         refreshWatchPageUI({ signal });
@@ -962,13 +966,11 @@ async function renderVideoCourseMatches({ signal } = {}) {
     }
 
     if (isCurrentPlaylistTracked) {
-        console.log("first load, current playlist tracked");
         matchedCourses = matchedCourses.filter(
             (c) => c.playlistId !== getPlaylistId(window.location.href)
         );
         renderVideoCourseList({ signal, courses: matchedCourses });
     } else {
-        console.log("first load, current playlist not tracked");
         const isWatched = matchedCourses.some((c) => c.isWatched);
 
         renderVideoCourseList({ signal, courses: matchedCourses });
@@ -1593,6 +1595,7 @@ function setToStorage() {
                 investedTime: state.investedTime,
                 courseImgSrc: state.courseImgSrc,
                 courseName: state.courseName,
+                lastWatchedVideoId: state.lastWatchedVideoId,
             },
         },
         () => {
@@ -1842,7 +1845,6 @@ async function getCoursesContainingVideo(videoId) {
 }
 
 async function renderVideoCourseList({ signal, courses }) {
-    console.log("Rendering video course list:", courses);
     if (signal?.aborted) return;
 
     const secondaryCol = await waitForElement({ selector: "#secondary-inner", signal });
@@ -2016,9 +2018,8 @@ async function renderHomeCoursesSection({ signal }) {
 }
 
 function createCourseCard(course) {
-    const card = document.createElement("a");
+    const card = document.createElement("div");
     card.className = "tmc-home-course-card";
-    card.href = `https://www.youtube.com/playlist?list=${course.id}`;
 
     const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
 
@@ -2026,14 +2027,20 @@ function createCourseCard(course) {
     const watchedSec = toSeconds(course.watchedDuration);
     const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
 
-    const thumbnail = document.createElement("div");
+    const link = (course.lastWatchedVideoId)
+        ? `watch?v=${course.lastWatchedVideoId}&list=${course.id}`
+        : `playlist?list=${course.id}`
+
+    const thumbnail = document.createElement("a");
     thumbnail.className = "tmc-home-course-card-thumbnail";
+    thumbnail.href = `https://www.youtube.com/${link}`;
     const img = document.createElement("img");
     img.src = course.courseImgSrc || "";
     thumbnail.appendChild(img);
 
-    const info = document.createElement("div");
+    const info = document.createElement("a");
     info.className = "tmc-home-course-card-info";
+    info.href = `https://www.youtube.com/playlist?list=${course.id}`;
 
     const title = document.createElement("div");
     title.className = "tmc-home-course-card-title";
