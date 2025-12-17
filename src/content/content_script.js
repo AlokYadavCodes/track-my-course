@@ -145,6 +145,8 @@ async function handlePartialUpdate() {
         if (state.activePageUpdateController) {
             state.activePageUpdateController.abort();
         }
+        state.lastWatchedVideoId = getVideoId(window.location.href);
+        setToStorage();
         state.activePageUpdateController = new AbortController();
         const { signal } = state.activePageUpdateController;
 
@@ -2029,7 +2031,7 @@ function createCourseCard(course) {
 
     const link = (course.lastWatchedVideoId)
         ? `watch?v=${course.lastWatchedVideoId}&list=${course.id}`
-        : `playlist?list=${course.id}`
+        : `playlist?list=${course.id}`;
 
     const thumbnail = document.createElement("a");
     thumbnail.className = "tmc-home-course-card-thumbnail";

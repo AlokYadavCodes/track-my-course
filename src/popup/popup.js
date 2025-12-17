@@ -243,7 +243,7 @@ function addClickListeners() {
             let link = `list=${course.dataset.courseId}`;
             link = ((target.closest(".course-img")) && (course.dataset.lastWatchedVideoId))
                 ? `watch?v=${course.dataset.lastWatchedVideoId}&${link}`
-                : `playlist?${link}`
+                : `playlist?${link}`;
             const url = `https://www.youtube.com/${link}`;
 
             window.open(url, "_blank", "noopener,noreferrer");
