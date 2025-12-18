@@ -83,6 +83,7 @@ html[dark] {
 }
 
 .tmc-home-course-card-thumbnail {
+    position: relative;
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -100,39 +101,30 @@ html[dark] {
     transition: transform 0.2s ease;
 }
 
-.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
-    transform: scale(1.02);
-}
-
-.tmc-home-course-card-thumbnail::after {
-    content: "";
+.tmc-home-course-card-thumbnail-overlay {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    transform: translate(-50%, -50%) scale(0.8);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    
-    background-color: rgba(0, 0, 0, 0.7);
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 18px;
-    
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #f1f1f1;
+    background-color: rgba(0, 0, 0, 0.6);
     opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.0, 0.0, 0.2, 1);
-    pointer-events: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
 }
 
-.tmc-home-course-card:hover .tmc-home-course-card-thumbnail::after {
+.tmc-home-course-card-thumbnail-overlay .icon {
+    margin: 4px;
+    width: 28px;
+}
+
+.tmc-home-course-card-thumbnail-overlay .text {
+    margin: 4px;
+    font-size: 18px;
+    font-family: "Roboto", sans-serif;
+}
+.tmc-home-course-card-thumbnail:hover .tmc-home-course-card-thumbnail-overlay {
     opacity: 1;
-    transform: translateY(2px);
-}
-
-.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
-    filter: brightness(0.9);
 }
 
 .tmc-home-course-card-info {
