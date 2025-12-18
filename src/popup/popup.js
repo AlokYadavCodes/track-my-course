@@ -89,18 +89,18 @@ async function renderCourses(courses) {
 
         if (getCompletedPercentage(course) === 100) {
             completedCoursesCount++;
-            completedCoursesEl.appendChild(courseElement);
+            completedCoursesEl.append(courseElement);
         } else {
             inProgressCoursesCount++;
-            inProgressCoursesEl.appendChild(courseElement);
+            inProgressCoursesEl.append(courseElement);
         }
     }
 
     if (inProgressCoursesCount === 0) {
-        inProgressCoursesEl.appendChild(createNoCourseElement(NO_COURSES_IN_PROGRESS));
+        inProgressCoursesEl.append(createNoCourseElement(NO_COURSES_IN_PROGRESS));
     }
     if (completedCoursesCount === 0) {
-        completedCoursesEl.appendChild(createNoCourseElement(NO_COURSES_COMPLETED));
+        completedCoursesEl.append(createNoCourseElement(NO_COURSES_COMPLETED));
     }
     updateCoursesCount();
 }
@@ -118,16 +118,18 @@ function createCourseElement(courseId, course) {
 
     // Course thumbnail
     const courseHref = course.lastWatchedVideoId
-        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
-        : `https://www.youtube.com/playlist?list=${course.id}`;
+        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${courseId}`
+        : `https://www.youtube.com/playlist?list=${courseId}`;
 
     const thumbnail = document.createElement("a");
     thumbnail.className = "thumbnail";
     thumbnail.href = courseHref;
+    thumbnail.target = "_blank";
+    thumbnail.rel = "noopener noreferrer";
     const img = document.createElement("img");
     img.src = course.courseImgSrc;
     img.alt = "Course Image";
-    thumbnail.appendChild(img);
+    thumbnail.append(img);
 
     // Thumbnail overlay
     const thumbnailOverlay = document.createElement("div");
@@ -163,12 +165,14 @@ function createCourseElement(courseId, course) {
     overlayText.className = "text";
     overlayText.textContent = course.lastWatchedVideoId ? "Resume" : "View Course";
     thumbnailOverlay.append(overlayIcon, overlayText);
-    thumbnail.appendChild(thumbnailOverlay);
+    thumbnail.append(thumbnailOverlay);
 
     // Course info
     const info = document.createElement("a");
     info.className = "course-info";
-    info.href = `https://www.youtube.com/playlist?list=${course.id}`;
+    info.href = `https://www.youtube.com/playlist?list=${courseId}`;
+    info.target = "_blank";
+    info.rel = "noopener noreferrer";
     const title = document.createElement("h3");
     title.textContent = course.courseName || "Untitled Course";
     const completion = document.createElement("p");
@@ -181,18 +185,18 @@ function createCourseElement(courseId, course) {
     const progressFill = document.createElement("div");
     progressFill.className = "progress-fill";
     progressFill.style.width = `${completedPercentage}%`;
-    progressBar.appendChild(progressFill);
+    progressBar.append(progressFill);
 
     info.append(title, completion, progressBar);
     content.append(thumbnail, info);
-    courseElement.appendChild(content);
+    courseElement.append(content);
 
     // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.title = "Remove Course";
     deleteBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 7H12M18 7H12M12 7V7C12 7 12 7.58172 12 8.5C12 9.41828 12 10 12 10M12 7V7C12 7 12 6.41828 12 5.5C12 4.58172 12 4 12 4M10 11V17M14 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7H9V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    courseElement.appendChild(deleteBtn);
+    courseElement.append(deleteBtn);
 
     // Delete confirmation
     const deleteConfirmation = document.createElement("div");
@@ -212,7 +216,7 @@ function createCourseElement(courseId, course) {
 
     actions.append(cancelBtn, confirmBtn);
     deleteConfirmation.append(p, actions);
-    courseElement.appendChild(deleteConfirmation);
+    courseElement.append(deleteConfirmation);
 
     return courseElement;
 }
@@ -250,14 +254,14 @@ function addClickListeners() {
                 if (completedCoursesCount === 0) {
                     document
                         .querySelector(".completed-courses")
-                        .appendChild(createNoCourseElement(NO_COURSES_COMPLETED));
+                        .append(createNoCourseElement(NO_COURSES_COMPLETED));
                 }
             } else {
                 inProgressCoursesCount--;
                 if (inProgressCoursesCount === 0) {
                     document
                         .querySelector(".in-progress-courses")
-                        .appendChild(createNoCourseElement(NO_COURSES_IN_PROGRESS));
+                        .append(createNoCourseElement(NO_COURSES_IN_PROGRESS));
                 }
             }
             updateCoursesCount();

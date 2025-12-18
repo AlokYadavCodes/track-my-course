@@ -178,9 +178,6 @@ async function updateWatchPage({ signal }) {
             signal,
         });
 
-        // Populate the newly created UI with data.
-        refreshWatchPageUI({ signal });
-
         state.lastWatchedVideoId = getVideoId(window.location.href);
         setToStorage();
     } else {
@@ -210,9 +207,6 @@ async function updatePlaylistPage({ signal }) {
         removePPStartCourseBtn();
         await renderPPProgressDiv({ signal });
         await renderPPVideoCheckboxes({ signal });
-
-        // Populate the newly created UI with data.
-        refreshPlaylistPageUI({ signal });
     } else {
         removePPProgressDiv();
         removeVideoCheckboxes();
@@ -368,7 +362,7 @@ async function renderWPStartCourseBtn({ signal }) {
     startCourseBtn.textContent = "Start Course";
     startCourseBtn.classList.add("tmc-start-course-btn", "tmc-wp-start-course-btn");
     if (signal.aborted) throw createAbortError();
-    menu.appendChild(startCourseBtn);
+    menu.append(startCourseBtn);
 
     startCourseBtn.addEventListener("click", async () => {
         try {
@@ -465,16 +459,9 @@ async function renderDisabledStartCourseBtn({ signal }) {
 
     const textNode3 = document.createTextNode(".");
 
-    tooltip.appendChild(textNode1);
-    tooltip.appendChild(bold);
-    tooltip.appendChild(textNode2);
-    tooltip.appendChild(link);
-    tooltip.appendChild(textNode3);
-
-    buttonContainerEl.appendChild(startBtn);
-    buttonContainerEl.appendChild(tooltip);
-
-    menu.appendChild(buttonContainerEl);
+    tooltip.append(textNode1, bold, textNode2, link, textNode3);
+    buttonContainerEl.append(startBtn, tooltip);
+    menu.append(buttonContainerEl);
 
     buttonContainerEl.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -492,7 +479,7 @@ async function renderWPVideoCheckboxes({ signal }) {
     for (const video of playlistVideos) {
         if (video.tagName.toLowerCase() === "ytd-playlist-panel-video-renderer") {
             if (video.querySelector(".tmc-wp-checkbox-wrapper")) continue;
-            setupCheckbox(video, PAGE_TYPE.WATCH);
+            setupCheckbox({ video, pageType: PAGE_TYPE.WATCH, signal });
         }
     }
 }
@@ -507,7 +494,7 @@ async function renderPPVideoCheckboxes({ signal }) {
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
         if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
-            setupCheckbox(video, PAGE_TYPE.PLAYLIST);
+            setupCheckbox({ video, pageType: PAGE_TYPE.PLAYLIST, signal });
         } else {
             const config = { childList: true };
             const callback = (mutationList, observer) => {
@@ -520,7 +507,7 @@ async function renderPPVideoCheckboxes({ signal }) {
                 }
                 for (const video of playlistVideos) {
                     if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
-                        setupCheckbox(video, PAGE_TYPE.PLAYLIST);
+                        setupCheckbox({ video, pageType: PAGE_TYPE.PLAYLIST, signal });
                     } else {
                         observer.observe(contentDiv, config);
                     }
@@ -538,7 +525,7 @@ async function renderPPVideoCheckboxes({ signal }) {
     }
 }
 
-function setupCheckbox(video, pageType) {
+function setupCheckbox({ video, pageType, signal }) {
     if (pageType !== PAGE_TYPE.PLAYLIST && pageType !== PAGE_TYPE.WATCH) {
         throw new Error("Invalid page type for checkbox setup");
     }
@@ -567,7 +554,7 @@ function setupCheckbox(video, pageType) {
     });
 
     const menu = video.querySelector("#menu");
-    menu.appendChild(checkboxWrapper);
+    menu.append(checkboxWrapper);
 }
 
 /**
@@ -662,13 +649,8 @@ async function renderWPProgressDiv({ signal }) {
     totalCount.id = "total-videos-count";
     totalCount.textContent = Object.keys(state.videoWatchStatus).length;
 
-    videosSpan.appendChild(watchedCount);
-    videosSpan.appendChild(document.createTextNode("/"));
-    videosSpan.appendChild(totalCount);
-    videosSpan.appendChild(document.createTextNode(" watched"));
-
-    completedVideos.appendChild(svgCheck);
-    completedVideos.appendChild(videosSpan);
+    videosSpan.append(watchedCount, "/", totalCount, "watched");
+    completedVideos.append(svgCheck, videosSpan);
 
     // Total time
     const totalTime = document.createElement("div");
@@ -676,9 +658,7 @@ async function renderWPProgressDiv({ signal }) {
     totalTime.textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
 
     // Append to time container
-    timeContainer.appendChild(watchedTime);
-    timeContainer.appendChild(completedVideos);
-    timeContainer.appendChild(totalTime);
+    timeContainer.append(watchedTime, completedVideos, totalTime);
 
     // Progress bar
     const progressBarOuter = document.createElement("div");
@@ -691,8 +671,8 @@ async function renderWPProgressDiv({ signal }) {
     progressBar.id = "progress-bar";
     progressBar.style.width = `${calculateCompletionPercentage()}%`;
 
-    progressBarContainer.appendChild(progressBar);
-    progressBarOuter.appendChild(progressBarContainer);
+    progressBarContainer.append(progressBar);
+    progressBarOuter.append(progressBarContainer);
 
     // Completed percentage & invested time
     const completedDiv = document.createElement("div");
@@ -707,12 +687,9 @@ async function renderWPProgressDiv({ signal }) {
 
     const investedTime = document.createElement("b");
     investedTime.id = "invested-time";
-    investedTime.textContent = "0h 0m";
+    investedTime.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
 
-    completedDiv.appendChild(completedPercent);
-    completedDiv.appendChild(percentText);
-    completedDiv.appendChild(document.createTextNode(" completed in "));
-    completedDiv.appendChild(investedTime);
+    completedDiv.append(completedPercent, percentText, " completed in ", investedTime);
 
     // Delete button
     const deleteBtn = document.createElement("div");
@@ -741,19 +718,10 @@ async function renderWPProgressDiv({ signal }) {
     cancelBtn.className = "tmc-cancel-delete";
     cancelBtn.textContent = "No";
 
-    deleteButtons.appendChild(confirmBtn);
-    deleteButtons.appendChild(cancelBtn);
-    deletePopup.appendChild(popupText);
-    deletePopup.appendChild(deleteButtons);
-
-    // Append all to wrapper
-    wrapper.appendChild(timeContainer);
-    wrapper.appendChild(progressBarOuter);
-    wrapper.appendChild(completedDiv);
-    wrapper.appendChild(deleteBtn);
-
-    progressDiv.appendChild(wrapper);
-    progressDiv.appendChild(deletePopup);
+    deleteButtons.append(confirmBtn, cancelBtn);
+    deletePopup.append(popupText, deleteButtons);
+    wrapper.append(timeContainer, progressBarOuter, completedDiv, deleteBtn);
+    progressDiv.append(wrapper, deletePopup);
 
     // Append to header
     const headerContents = await waitForElement({
@@ -767,7 +735,7 @@ async function renderWPProgressDiv({ signal }) {
     if (state.playlistActions) state.playlistActions.remove();
     if (signal.aborted) throw createAbortError();
 
-    headerContents.appendChild(progressDiv);
+    headerContents.append(progressDiv);
 
     // Event listeners
     progressDiv.addEventListener("click", (e) => e.stopPropagation());
@@ -813,8 +781,7 @@ async function renderPPProgressDiv({ signal }) {
     totalText.className = "tmc-total-text";
     totalText.textContent = `${Object.keys(state.videoWatchStatus).length} videos`;
 
-    totalDiv.appendChild(totalSvg);
-    totalDiv.appendChild(totalText);
+    totalDiv.append(totalSvg, totalText);
 
     // Duration
     const durationDiv = document.createElement("div");
@@ -835,8 +802,7 @@ async function renderPPProgressDiv({ signal }) {
     durationText.className = "tmc-duration-text";
     durationText.textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
 
-    durationDiv.appendChild(durationSvg);
-    durationDiv.appendChild(durationText);
+    durationDiv.append(durationSvg, durationText);
 
     // Watched
     const watchedDiv = document.createElement("div");
@@ -858,8 +824,7 @@ async function renderPPProgressDiv({ signal }) {
     const totalCount = Object.keys(state.videoWatchStatus).length;
     watchedText.textContent = `${watchedCount} / ${totalCount} watched`;
 
-    watchedDiv.appendChild(watchedSvg);
-    watchedDiv.appendChild(watchedText);
+    watchedDiv.append(watchedSvg, watchedText);
 
     const actionsDiv = document.createElement("div");
     actionsDiv.className = "tmc-actions";
@@ -880,14 +845,8 @@ async function renderPPProgressDiv({ signal }) {
         <path d="M6 7h12M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke-linecap="round" stroke-linejoin="round"></path>
     </svg>`;
 
-    actionsDiv.appendChild(refreshDiv);
-    actionsDiv.appendChild(deleteDiv);
-
-    // Append total, duration, watched, actions to wrapper
-    wrapper.appendChild(totalDiv);
-    wrapper.appendChild(durationDiv);
-    wrapper.appendChild(watchedDiv);
-    wrapper.appendChild(actionsDiv);
+    actionsDiv.append(refreshDiv, deleteDiv);
+    wrapper.append(totalDiv, durationDiv, watchedDiv, actionsDiv);
 
     // Delete popup
     const deletePopup = document.createElement("div");
@@ -907,13 +866,9 @@ async function renderPPProgressDiv({ signal }) {
     cancelBtn.className = "tmc-cancel-delete";
     cancelBtn.textContent = "No";
 
-    deleteButtons.appendChild(confirmBtn);
-    deleteButtons.appendChild(cancelBtn);
-    deletePopup.appendChild(popupText);
-    deletePopup.appendChild(deleteButtons);
-
-    progressDiv.appendChild(wrapper);
-    progressDiv.appendChild(deletePopup);
+    deleteButtons.append(confirmBtn, cancelBtn);
+    deletePopup.append(popupText, deleteButtons);
+    progressDiv.append(wrapper, deletePopup);
 
     // Append progressDiv to page
     let targetEl;
@@ -997,8 +952,7 @@ async function renderPlaylistScanning({ signal }) {
     scanningTextEl.innerHTML = `Scanning Playlist..
         <p> <span id="scanned-videos-count">${100}</span> videos scanned</p>
         `;
-    contentDiv.appendChild(scanningPlaylistEl);
-    contentDiv.appendChild(scanningTextEl);
+    contentDiv.append(scanningPlaylistEl, scanningTextEl);
     updateScanningTextLeft();
 
     const refreshBtnSVG = document.querySelector(".tmc-refresh-svg");
@@ -1206,7 +1160,7 @@ function removeWPProgressDiv() {
 
     const headerContents = document.querySelector(SELECTORS.watchPage.headerContents);
     if (headerContents && state.playlistActions) {
-        headerContents.appendChild(state.playlistActions);
+        headerContents.append(state.playlistActions);
     }
 }
 
@@ -1226,7 +1180,7 @@ function removeProgressDiv() {
 
     const headerContents = document.querySelector(SELECTORS.watchPage.headerContents);
 
-    if (headerContents && state.playlistActions) headerContents.appendChild(state.playlistActions);
+    if (headerContents && state.playlistActions) headerContents.append(state.playlistActions);
 }
 
 function removeWPVideoCheckboxes() {
@@ -1869,7 +1823,7 @@ async function renderVideoCourseList({ signal, courses }) {
     header.className = "tmc-video-course-header";
     const count = courses.length;
     header.textContent = `${isCurrentPlaylistTracked ? "Also included in" : "Included in"} ${count > 1 ? "these" : "this"} ${count > 1 ? "courses" : "course"}`;
-    container.appendChild(header);
+    container.append(header);
 
     // List
     const list = document.createElement("div");
@@ -1898,12 +1852,11 @@ async function renderVideoCourseList({ signal, courses }) {
             </svg>
         `;
 
-        item.appendChild(name);
-        item.appendChild(icon);
-        list.appendChild(item);
+        item.append(name, icon);
+        list.append(item);
     });
 
-    container.appendChild(list);
+    container.append(list);
 }
 
 async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
@@ -1937,7 +1890,7 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
         await synchronizeVideoStatus(videoId, isChecked, videoDuration);
     });
 
-    titleContainer.appendChild(checkboxWrapper);
+    titleContainer.append(checkboxWrapper);
 }
 
 async function renderHomeCoursesSection({ signal }) {
@@ -1960,7 +1913,7 @@ async function renderHomeCoursesSection({ signal }) {
 
     courses.forEach((course) => {
         const card = createCourseCard(course);
-        coursesScroller.appendChild(card);
+        coursesScroller.append(card);
     });
 
     coursesSection.append(sectionTitle, coursesScroller);
@@ -2040,7 +1993,7 @@ function createCourseCard(course) {
     thumbnail.href = courseHref;
     const img = document.createElement("img");
     img.src = course.courseImgSrc || "";
-    thumbnail.appendChild(img);
+    thumbnail.append(img);
 
     const thumbnailOverlay = document.createElement("div");
     thumbnailOverlay.className = "tmc-home-course-card-thumbnail-overlay";
@@ -2071,12 +2024,11 @@ function createCourseCard(course) {
         >
             <path d="M11.485 2.143 1.486 8.148a1 1 0 000 1.715l10 5.994a1 1 0 001.028 0L21 10.77V18a1 1 0 002 0V9a1 1 0 00-.485-.852l-10-6.005a1 1 0 00-1.03 0ZM19 16.926V14.3l-5.458 3.27a3 3 0 01-3.084 0L5 14.3v2.625a2 2 0 00.992 1.73l5.504 3.21a1 1 0 001.008 0l5.504-3.212A2 2 0 0019 16.926Z"></path>
         </svg>`;
-    thumbnailOverlay.appendChild(overlayIcon);
     const overlayText = document.createElement("div");
     overlayText.className = "text";
     overlayText.textContent = course.lastWatchedVideoId ? "Resume Course" : "View Course";
-    thumbnailOverlay.appendChild(overlayText);
-    thumbnail.appendChild(thumbnailOverlay);
+    thumbnailOverlay.append(overlayIcon, overlayText);
+    thumbnail.append(thumbnailOverlay);
 
     const info = document.createElement("a");
     info.className = "tmc-home-course-card-info";
@@ -2095,7 +2047,7 @@ function createCourseCard(course) {
     const progressFill = document.createElement("div");
     progressFill.className = "tmc-home-course-card-progress-fill";
     progressFill.style.width = `${progressPercent}%`;
-    progressBg.appendChild(progressFill);
+    progressBg.append(progressFill);
 
     info.append(title, stats, progressBg);
     card.append(thumbnail, info);
@@ -2104,15 +2056,9 @@ function createCourseCard(course) {
 }
 
 async function updateHomeCoursesContent({ signal } = {}) {
-    if (!signal) {
-        if (state.activePageUpdateController) {
-            state.activePageUpdateController.abort();
-        }
-        state.activePageUpdateController = new AbortController();
-        signal = state.activePageUpdateController.signal;
-    }
-    const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
-    if (!homeCoursesScroller) {
+    if (!signal) signal = state.activePageUpdateController.signal;
+    const homeCoursesSection = document.querySelector(".tmc-home-section");
+    if (!homeCoursesSection) {
         renderHomeCoursesSection({ signal });
         return;
     }
@@ -2126,8 +2072,9 @@ async function updateHomeCoursesContent({ signal } = {}) {
         return;
     }
 
+    const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
     homeCoursesScroller.innerHTML = "";
     for (const course of courses) {
-        homeCoursesScroller.appendChild(createCourseCard(course));
+        homeCoursesScroller.append(createCourseCard(course));
     }
 }
