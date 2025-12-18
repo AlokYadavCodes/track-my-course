@@ -206,7 +206,6 @@ input:checked + .slider:before {
     border-color: var(--border-hover);
     transform: translateY(-1px);
     box-shadow: 0 0.3125rem 0.9375rem rgba(0, 0, 0, 0.1);
-    cursor: pointer;
 }
 
 .course-content {
@@ -217,7 +216,9 @@ input:checked + .slider:before {
     transition: opacity 0.2s ease;
 }
 
-.course-img {
+.thumbnail {
+    position: relative;
+    cursor: pointer;
     width: 6.25rem;
     height: 3.5rem;
     overflow: hidden;
@@ -226,13 +227,42 @@ input:checked + .slider:before {
     background-color: var(--border-primary);
 }
 
-.course-img img {
+.thumbnail img {
     height: 100%;
     width: 100%;
     object-fit: cover;
 }
 
+.thumbnail-overlay {
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #f1f1f1;
+    background-color: rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
+}
+
+.thumbnail-overlay .icon {
+    margin: 1px;
+    width: 16px;
+}
+
+.thumbnail-overlay .text {
+    margin: 1px;
+    font-size: 12px;
+    font-family: "Roboto", sans-serif;
+}
+.thumbnail:hover .thumbnail-overlay {
+    opacity: 1;
+}
+
 .course-info {
+    text-decoration: none;
+    color: inherit;
     flex: 1;
     min-width: 0;
 }

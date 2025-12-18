@@ -45,6 +45,7 @@ const SELECTORS = {
 const state = {
     playlistId: null,
     videoWatchStatus: {},
+    lastWatchedVideoId: null,
     totalDuration: { hours: 0, minutes: 0, seconds: 0 },
     watchedDuration: { hours: 0, minutes: 0, seconds: 0 },
     investedTime: { hours: 0, minutes: 0, seconds: 0 },
@@ -85,6 +86,7 @@ async function updateStateVariables({ signal }) {
     state.watchedDuration = courseData.watchedDuration ?? {
         ...defaultDuration,
     };
+    state.lastWatchedVideoId = courseData.lastWatchedVideoId || null;
     state.investedTime = courseData.investedTime ?? { ...defaultDuration };
     state.courseImgSrc = courseData.courseImgSrc ?? null;
     state.courseName = courseData.courseName ?? null;
@@ -148,6 +150,9 @@ async function handlePartialUpdate() {
 
         removeVideoCheckboxes();
         await renderWPVideoCheckboxes({ signal });
+
+        state.lastWatchedVideoId = getVideoId(window.location.href);
+        setToStorage();
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error("Unexpected error during partial update:", err);
@@ -175,6 +180,9 @@ async function updateWatchPage({ signal }) {
 
         // Populate the newly created UI with data.
         refreshWatchPageUI({ signal });
+
+        state.lastWatchedVideoId = getVideoId(window.location.href);
+        setToStorage();
     } else {
         removeWPProgressDiv(); // Clean up progress bar if it exists
         removeVideoCheckboxes(); // Clean up checkboxes if exists
@@ -962,13 +970,11 @@ async function renderVideoCourseMatches({ signal } = {}) {
     }
 
     if (isCurrentPlaylistTracked) {
-        console.log("first load, current playlist tracked");
         matchedCourses = matchedCourses.filter(
             (c) => c.playlistId !== getPlaylistId(window.location.href)
         );
         renderVideoCourseList({ signal, courses: matchedCourses });
     } else {
-        console.log("first load, current playlist not tracked");
         const isWatched = matchedCourses.some((c) => c.isWatched);
 
         renderVideoCourseList({ signal, courses: matchedCourses });
@@ -1593,6 +1599,7 @@ function setToStorage() {
                 investedTime: state.investedTime,
                 courseImgSrc: state.courseImgSrc,
                 courseName: state.courseName,
+                lastWatchedVideoId: state.lastWatchedVideoId,
             },
         },
         () => {
@@ -1842,7 +1849,6 @@ async function getCoursesContainingVideo(videoId) {
 }
 
 async function renderVideoCourseList({ signal, courses }) {
-    console.log("Rendering video course list:", courses);
     if (signal?.aborted) return;
 
     const secondaryCol = await waitForElement({ selector: "#secondary-inner", signal });
@@ -2016,9 +2022,8 @@ async function renderHomeCoursesSection({ signal }) {
 }
 
 function createCourseCard(course) {
-    const card = document.createElement("a");
+    const card = document.createElement("div");
     card.className = "tmc-home-course-card";
-    card.href = `https://www.youtube.com/playlist?list=${course.id}`;
 
     const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
 
@@ -2026,14 +2031,56 @@ function createCourseCard(course) {
     const watchedSec = toSeconds(course.watchedDuration);
     const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
 
-    const thumbnail = document.createElement("div");
+    const courseHref = course.lastWatchedVideoId
+        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
+        : `https://www.youtube.com/playlist?list=${course.id}`;
+
+    const thumbnail = document.createElement("a");
     thumbnail.className = "tmc-home-course-card-thumbnail";
+    thumbnail.href = courseHref;
     const img = document.createElement("img");
     img.src = course.courseImgSrc || "";
     thumbnail.appendChild(img);
 
-    const info = document.createElement("div");
+    const thumbnailOverlay = document.createElement("div");
+    thumbnailOverlay.className = "tmc-home-course-card-thumbnail-overlay";
+    const overlayIcon = document.createElement("div");
+    overlayIcon.className = "icon";
+    overlayIcon.innerHTML = course.lastWatchedVideoId
+        ? `<svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="28"
+            width="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            focusable="false"
+            aria-hidden="true"
+            style="pointer-events: none; display: inherit; width: 100%; height: 100%;"
+        >
+            <path d="M5 4.623V19.38a1.5 1.5 0 002.26 1.29L22 12 7.26 3.33A1.5 1.5 0 005 4.623Z"></path>
+        </svg>`
+        : `<svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="28"
+            width="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            focusable="false"
+            aria-hidden="true"
+            style="pointer-events: none; display: inherit; width: 100%; height: 100%;"
+        >
+            <path d="M11.485 2.143 1.486 8.148a1 1 0 000 1.715l10 5.994a1 1 0 001.028 0L21 10.77V18a1 1 0 002 0V9a1 1 0 00-.485-.852l-10-6.005a1 1 0 00-1.03 0ZM19 16.926V14.3l-5.458 3.27a3 3 0 01-3.084 0L5 14.3v2.625a2 2 0 00.992 1.73l5.504 3.21a1 1 0 001.008 0l5.504-3.212A2 2 0 0019 16.926Z"></path>
+        </svg>`;
+    thumbnailOverlay.appendChild(overlayIcon);
+    const overlayText = document.createElement("div");
+    overlayText.className = "text";
+    overlayText.textContent = course.lastWatchedVideoId ? "Resume Course" : "View Course";
+    thumbnailOverlay.appendChild(overlayText);
+    thumbnail.appendChild(thumbnailOverlay);
+
+    const info = document.createElement("a");
     info.className = "tmc-home-course-card-info";
+    info.href = `https://www.youtube.com/playlist?list=${course.id}`;
 
     const title = document.createElement("div");
     title.className = "tmc-home-course-card-title";

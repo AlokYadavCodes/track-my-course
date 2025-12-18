@@ -83,12 +83,15 @@ html[dark] {
 }
 
 .tmc-home-course-card-thumbnail {
+    position: relative;
+    display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
     border-radius: 12px;
     overflow: hidden;
     background-color: #333;
     margin-bottom: 12px;
+    text-decoration: none;
 }
 
 .tmc-home-course-card-thumbnail img {
@@ -98,13 +101,37 @@ html[dark] {
     transition: transform 0.2s ease;
 }
 
-.tmc-home-course-card:hover .tmc-home-course-card-thumbnail img {
-    transform: scale(1.02);
+.tmc-home-course-card-thumbnail-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #f1f1f1;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.tmc-home-course-card-thumbnail-overlay .icon {
+    margin: 4px;
+    width: 28px;
+}
+
+.tmc-home-course-card-thumbnail-overlay .text {
+    margin: 4px;
+    font-size: 18px;
+    font-family: "Roboto", sans-serif;
+}
+.tmc-home-course-card-thumbnail:hover .tmc-home-course-card-thumbnail-overlay {
+    opacity: 1;
 }
 
 .tmc-home-course-card-info {
     display: flex;
     flex-direction: column;
+    text-decoration: none;
+    color: inherit;
 }
 
 .tmc-home-course-card-title {

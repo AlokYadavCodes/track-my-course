@@ -116,19 +116,61 @@ function createCourseElement(courseId, course) {
     const content = document.createElement("div");
     content.className = "course-content";
 
-    // Course image
-    const imgDiv = document.createElement("div");
-    imgDiv.className = "course-img";
+    // Course thumbnail
+    const courseHref = course.lastWatchedVideoId
+        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
+        : `https://www.youtube.com/playlist?list=${course.id}`;
+
+    const thumbnail = document.createElement("a");
+    thumbnail.className = "thumbnail";
+    thumbnail.href = courseHref;
     const img = document.createElement("img");
     img.src = course.courseImgSrc;
     img.alt = "Course Image";
-    imgDiv.appendChild(img);
+    thumbnail.appendChild(img);
+
+    // Thumbnail overlay
+    const thumbnailOverlay = document.createElement("div");
+    thumbnailOverlay.className = "thumbnail-overlay";
+    const overlayIcon = document.createElement("div");
+    overlayIcon.className = "icon";
+    overlayIcon.innerHTML = course.lastWatchedVideoId
+        ? `<svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="28"
+            width="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            focusable="false"
+            aria-hidden="true"
+            style="pointer-events: none; display: inherit; width: 100%; height: 100%;"
+        >
+            <path d="M5 4.623V19.38a1.5 1.5 0 002.26 1.29L22 12 7.26 3.33A1.5 1.5 0 005 4.623Z"></path>
+        </svg>`
+        : `<svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="28"
+            width="28"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            focusable="false"
+            aria-hidden="true"
+            style="pointer-events: none; display: inherit; width: 100%; height: 100%;"
+        >
+            <path d="M11.485 2.143 1.486 8.148a1 1 0 000 1.715l10 5.994a1 1 0 001.028 0L21 10.77V18a1 1 0 002 0V9a1 1 0 00-.485-.852l-10-6.005a1 1 0 00-1.03 0ZM19 16.926V14.3l-5.458 3.27a3 3 0 01-3.084 0L5 14.3v2.625a2 2 0 00.992 1.73l5.504 3.21a1 1 0 001.008 0l5.504-3.212A2 2 0 0019 16.926Z"></path>
+        </svg>`;
+    const overlayText = document.createElement("div");
+    overlayText.className = "text";
+    overlayText.textContent = course.lastWatchedVideoId ? "Resume" : "View Course";
+    thumbnailOverlay.append(overlayIcon, overlayText);
+    thumbnail.appendChild(thumbnailOverlay);
 
     // Course info
-    const infoDiv = document.createElement("div");
-    infoDiv.className = "course-info";
+    const info = document.createElement("a");
+    info.className = "course-info";
+    info.href = `https://www.youtube.com/playlist?list=${course.id}`;
     const title = document.createElement("h3");
-    title.textContent = course.courseName;
+    title.textContent = course.courseName || "Untitled Course";
     const completion = document.createElement("p");
     completion.className = "completion";
     completion.textContent = `${completedPercentage}% completed`;
@@ -141,19 +183,14 @@ function createCourseElement(courseId, course) {
     progressFill.style.width = `${completedPercentage}%`;
     progressBar.appendChild(progressFill);
 
-    infoDiv.appendChild(title);
-    infoDiv.appendChild(completion);
-    infoDiv.appendChild(progressBar);
-
-    content.appendChild(imgDiv);
-    content.appendChild(infoDiv);
+    info.append(title, completion, progressBar);
+    content.append(thumbnail, info);
     courseElement.appendChild(content);
 
     // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.title = "Remove Course";
-    // Optionally, add your SVG via innerHTML only for static content (safe)
     deleteBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 7H12M18 7H12M12 7V7C12 7 12 7.58172 12 8.5C12 9.41828 12 10 12 10M12 7V7C12 7 12 6.41828 12 5.5C12 4.58172 12 4 12 4M10 11V17M14 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7H9V4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     courseElement.appendChild(deleteBtn);
 
@@ -173,10 +210,8 @@ function createCourseElement(courseId, course) {
     confirmBtn.className = "confirm-delete-btn";
     confirmBtn.textContent = "Remove Course";
 
-    actions.appendChild(cancelBtn);
-    actions.appendChild(confirmBtn);
-    deleteConfirmation.appendChild(p);
-    deleteConfirmation.appendChild(actions);
+    actions.append(cancelBtn, confirmBtn);
+    deleteConfirmation.append(p, actions);
     courseElement.appendChild(deleteConfirmation);
 
     return courseElement;
@@ -232,16 +267,6 @@ function addClickListeners() {
             course.addEventListener("transitionend", () => course.remove(), {
                 once: true,
             });
-        } else if (target.closest(".course-content")) {
-            const course = target.closest(".course");
-            if (!course) return;
-
-            const courseId = course.dataset.courseId;
-            if (!courseId) return;
-
-            const playlistUrl = `https://www.youtube.com/playlist?list=${courseId}`;
-
-            window.open(playlistUrl, "_blank", "noopener,noreferrer");
         }
     });
 }
