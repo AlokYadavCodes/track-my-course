@@ -46,6 +46,7 @@ const state = {
     playlistId: null,
     videoWatchStatus: {},
     lastWatchedVideoId: null,
+    lastInteractedAt: null,
     totalDuration: { hours: 0, minutes: 0, seconds: 0 },
     watchedDuration: { hours: 0, minutes: 0, seconds: 0 },
     investedTime: { hours: 0, minutes: 0, seconds: 0 },
@@ -87,6 +88,7 @@ async function updateStateVariables({ signal }) {
         ...defaultDuration,
     };
     state.lastWatchedVideoId = courseData.lastWatchedVideoId || null;
+    state.lastInteractedAt = courseData.lastInteractedAt || null;
     state.investedTime = courseData.investedTime ?? { ...defaultDuration };
     state.courseImgSrc = courseData.courseImgSrc ?? null;
     state.courseName = courseData.courseName ?? null;
@@ -152,6 +154,7 @@ async function handlePartialUpdate() {
         await renderWPVideoCheckboxes({ signal });
 
         state.lastWatchedVideoId = getVideoId(window.location.href);
+        state.lastInteractedAt = Date.now();
         setToStorage();
     } catch (err) {
         if (err.name !== "AbortError") {
@@ -179,6 +182,7 @@ async function updateWatchPage({ signal }) {
         });
 
         state.lastWatchedVideoId = getVideoId(window.location.href);
+        state.lastInteractedAt = Date.now();
         setToStorage();
     } else {
         removeWPProgressDiv(); // Clean up progress bar if it exists
@@ -377,7 +381,7 @@ async function renderWPStartCourseBtn({ signal }) {
             state.totalDuration = courseData.totalDuration;
             state.watchedDuration = { hours: 0, minutes: 0, seconds: 0 }; // Reset
             state.investedTime = { hours: 0, minutes: 0, seconds: 0 }; // Reset
-
+            state.lastInteractedAt = Date.now();
             state.courseImgSrc = await imgSrcToBase64(playlistItems.querySelector("img")?.src);
             state.courseName = document.querySelector(
                 "#playlist:not([hidden]) #header-contents .title"
@@ -1513,6 +1517,7 @@ async function updatePlaylistData() {
     if (isScanning) removePlaylistScanning();
 
     state.videoWatchStatus = videoWatchStatus;
+    state.lastInteractedAt = Date.now();
     const playlistImageSrc = document.querySelector(
         "#contents:has(>ytd-playlist-video-renderer) img"
     )?.src;
@@ -1554,6 +1559,7 @@ function setToStorage() {
                 courseImgSrc: state.courseImgSrc,
                 courseName: state.courseName,
                 lastWatchedVideoId: state.lastWatchedVideoId,
+                lastInteractedAt: state.lastInteractedAt,
             },
         },
         () => {
@@ -1900,6 +1906,7 @@ async function renderHomeCoursesSection({ signal }) {
         .map(([key, value]) => ({ ...value, id: key }));
 
     if (courses.length === 0 || signal.aborted) return;
+    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
 
     const coursesSection = document.createElement("div");
     coursesSection.className = "tmc-home-section";
@@ -2074,6 +2081,7 @@ async function updateHomeCoursesContent({ signal } = {}) {
 
     const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
     homeCoursesScroller.innerHTML = "";
+    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
     for (const course of courses) {
         homeCoursesScroller.append(createCourseCard(course));
     }

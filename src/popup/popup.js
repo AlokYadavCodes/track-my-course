@@ -34,8 +34,9 @@ function createNoCourseElement(message) {
 document.addEventListener("DOMContentLoaded", async () => {
     const storageData = await chrome.storage.local.get(null);
     const isFocusModeEnabled = storageData.focusMode || false;
-    const courses = { ...storageData };
-    delete courses.focusMode; // Exclude focusMode from course list
+    const courses = Object.entries(storageData)
+        .filter(([key]) => key !== "focusMode")
+        .map(([key, value]) => ({ ...value, id: key }));
 
     initializeFocusMode(isFocusModeEnabled);
     await renderCourses(courses);
@@ -65,14 +66,8 @@ async function renderCourses(courses) {
     inProgressCoursesEl.innerHTML = "";
     completedCoursesEl.innerHTML = "";
 
-    if (!courses) {
-        courses = await chrome.storage.local.get(null);
-        delete courses.focusMode; // Exclude focusMode from course list
-    }
-    const courseValues = Object.values(courses);
-
     // If there are no courses, show the welcome message and hide the lists
-    if (courseValues.length === 0) {
+    if (courses.length === 0) {
         welcomeMessageEl.classList.remove("hidden");
         courseListsContainerEl.classList.add("hidden");
         updateCoursesCount();
@@ -83,9 +78,9 @@ async function renderCourses(courses) {
     welcomeMessageEl.classList.add("hidden");
     courseListsContainerEl.classList.remove("hidden");
 
-    for (const courseId in courses) {
-        const course = courses[courseId];
-        const courseElement = createCourseElement(courseId, course);
+    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
+    courses.forEach((course) => {
+        const courseElement = createCourseElement(course);
 
         if (getCompletedPercentage(course) === 100) {
             completedCoursesCount++;
@@ -94,7 +89,7 @@ async function renderCourses(courses) {
             inProgressCoursesCount++;
             inProgressCoursesEl.append(courseElement);
         }
-    }
+    });
 
     if (inProgressCoursesCount === 0) {
         inProgressCoursesEl.append(createNoCourseElement(NO_COURSES_IN_PROGRESS));
@@ -105,12 +100,12 @@ async function renderCourses(courses) {
     updateCoursesCount();
 }
 
-function createCourseElement(courseId, course) {
+function createCourseElement(course) {
     const completedPercentage = getCompletedPercentage(course);
 
     const courseElement = document.createElement("div");
     courseElement.className = "course";
-    courseElement.dataset.courseId = courseId;
+    courseElement.dataset.courseId = course.id;
 
     // Course content container
     const content = document.createElement("div");
@@ -118,8 +113,8 @@ function createCourseElement(courseId, course) {
 
     // Course thumbnail
     const courseHref = course.lastWatchedVideoId
-        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${courseId}`
-        : `https://www.youtube.com/playlist?list=${courseId}`;
+        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
+        : `https://www.youtube.com/playlist?list=${course.id}`;
 
     const thumbnail = document.createElement("a");
     thumbnail.className = "thumbnail";
@@ -170,7 +165,7 @@ function createCourseElement(courseId, course) {
     // Course info
     const info = document.createElement("a");
     info.className = "course-info";
-    info.href = `https://www.youtube.com/playlist?list=${courseId}`;
+    info.href = `https://www.youtube.com/playlist?list=${course.id}`;
     info.target = "_blank";
     info.rel = "noopener noreferrer";
     const title = document.createElement("h3");
