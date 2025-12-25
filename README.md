@@ -59,7 +59,7 @@ _All features appear seamlessly inside YouTube’s interface._
 
 1. [Install TrackMyCourse](https://chromewebstore.google.com/detail/trackmycourse-track-youtu/eojbembojnleniamokihimgjikmpahin)
 2. Go to any YouTube playlist page.
-3. Click the **"Start Course"** button near the playlist title.
+3. Click the **"Start Playlist"** button near the playlist title.
 
 Once enabled, the progress bar and checkboxes will automatically appear for that playlist.
 

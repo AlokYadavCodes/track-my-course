@@ -363,7 +363,7 @@ async function renderWPStartCourseBtn({ signal }) {
     });
 
     const startCourseBtn = document.createElement("button");
-    startCourseBtn.textContent = "Start Course";
+    startCourseBtn.textContent = "Start Playlist";
     startCourseBtn.classList.add("tmc-start-course-btn", "tmc-wp-start-course-btn");
     if (signal.aborted) throw createAbortError();
     menu.append(startCourseBtn);
@@ -413,7 +413,7 @@ async function renderPPStartCourseBtn({ signal }) {
     }
 
     const startCourseBtn = document.createElement("a");
-    startCourseBtn.textContent = "Start Course";
+    startCourseBtn.textContent = "Start Playlist";
     startCourseBtn.className = "tmc-start-course-btn tmc-pp-start-course-btn";
 
     startCourseBtnWideScreenRefEl.insertAdjacentElement("afterend", startCourseBtn);
@@ -444,7 +444,7 @@ async function renderDisabledStartCourseBtn({ signal }) {
     const startBtn = document.createElement("button");
     startBtn.disabled = true;
     startBtn.className = "tmc-wp-start-course-btn disabled-tmc-wp-start-course-btn";
-    startBtn.textContent = "Start Course";
+    startBtn.textContent = "Start Playlist";
 
     // Tooltip
     const tooltip = document.createElement("div");
