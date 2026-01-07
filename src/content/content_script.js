@@ -2006,7 +2006,7 @@ function createCourseCard(course) {
     thumbnailOverlay.className = "tmc-home-course-card-thumbnail-overlay";
     const overlayIcon = document.createElement("div");
     overlayIcon.className = "icon";
-    overlayIcon.innerHTML = course.lastWatchedVideoId
+    overlayIcon.innerHTML = course.lastWatchedVideoId && progressPercent < 100
         ? `<svg
             xmlns="http://www.w3.org/2000/svg"
             height="28"
@@ -2033,7 +2033,7 @@ function createCourseCard(course) {
         </svg>`;
     const overlayText = document.createElement("div");
     overlayText.className = "text";
-    overlayText.textContent = course.lastWatchedVideoId ? "Resume Course" : "View Course";
+    overlayText.textContent = course.lastWatchedVideoId && progressPercent < 100 ? "Resume Course" : "View Course";
     thumbnailOverlay.append(overlayIcon, overlayText);
     thumbnail.append(thumbnailOverlay);
 

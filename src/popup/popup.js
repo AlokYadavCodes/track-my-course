@@ -131,7 +131,7 @@ function createCourseElement(course) {
     thumbnailOverlay.className = "thumbnail-overlay";
     const overlayIcon = document.createElement("div");
     overlayIcon.className = "icon";
-    overlayIcon.innerHTML = course.lastWatchedVideoId
+    overlayIcon.innerHTML = course.lastWatchedVideoId && completedPercentage < 100
         ? `<svg
             xmlns="http://www.w3.org/2000/svg"
             height="28"
@@ -158,7 +158,7 @@ function createCourseElement(course) {
         </svg>`;
     const overlayText = document.createElement("div");
     overlayText.className = "text";
-    overlayText.textContent = course.lastWatchedVideoId ? "Resume" : "View Course";
+    overlayText.textContent = course.lastWatchedVideoId && completedPercentage < 100 ? "Resume" : "View Course";
     thumbnailOverlay.append(overlayIcon, overlayText);
     thumbnail.append(thumbnailOverlay);
 
