@@ -34,13 +34,18 @@ function createNoCourseElement(message) {
 document.addEventListener("DOMContentLoaded", async () => {
     const storageData = await chrome.storage.local.get(null);
     const isFocusModeEnabled = storageData.focusMode || false;
+    const isCompletedHidden = storageData.hideCompletedCourses || false;
+    const sortOrder = storageData.sortOrder || "lastInteractedAt";
     const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
+        .filter(([key]) => key !== "focusMode" && key !== "hideCompletedCourses" && key !== "sortOrder")
         .map(([key, value]) => ({ ...value, id: key }));
 
     initializeFocusMode(isFocusModeEnabled);
-    await renderCourses(courses);
+    initializeSortOrder(sortOrder);
+    initializeCompletedHidden(isCompletedHidden);
+    await renderCourses(courses, sortOrder);
     addClickListeners();
+    addChangeListeners(courses);
 });
 
 let inProgressCoursesCount = 0;
@@ -53,7 +58,44 @@ function initializeFocusMode(isEnabled) {
     }
 }
 
-async function renderCourses(courses) {
+function initializeSortOrder(sortOrder) {
+    const sortOrderSelect = document.getElementById("sort-order-select");
+    if (sortOrderSelect) {
+        sortOrderSelect.value = sortOrder;
+    }
+}
+
+function initializeCompletedHidden(isEnabled) {
+    const completedHiddenToggle = document.getElementById("completed-hidden-toggle");
+    if (completedHiddenToggle) {
+        completedHiddenToggle.checked = isEnabled;
+    }
+}
+
+function addChangeListeners(courses) {
+    const sortOrderSelect = document.getElementById("sort-order-select");
+    if (sortOrderSelect) {
+        sortOrderSelect.addEventListener("change", (e) => {
+            const newSortOrder = e.target.value;
+            chrome.storage.local.set({ sortOrder: newSortOrder });
+            
+            renderCourses(courses, newSortOrder);
+        });
+    }
+
+    const completedHiddenToggle = document.getElementById("completed-hidden-toggle");
+    if (completedHiddenToggle) {
+        completedHiddenToggle.addEventListener("change", (e) => {
+            const isHidden = e.target.checked;
+            chrome.storage.local.set({ hideCompletedCourses: isHidden });
+            
+            const currentSort = document.getElementById("sort-order-select")?.value || "lastInteractedAt";
+            renderCourses(courses, currentSort);
+        });
+    }
+}
+
+async function renderCourses(courses, sortOrder) {
     inProgressCoursesCount = 0;
     completedCoursesCount = 0;
 
@@ -78,7 +120,16 @@ async function renderCourses(courses) {
     welcomeMessageEl.classList.add("hidden");
     courseListsContainerEl.classList.remove("hidden");
 
-    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
+    courses.sort((a, b) => {
+        if (sortOrder === "mostCompleted") {
+            return getCompletedPercentage(b) - getCompletedPercentage(a);
+        } else if (sortOrder === "leastCompleted") {
+            return getCompletedPercentage(a) - getCompletedPercentage(b);
+        } else {
+            return (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0);
+        }
+    });
+
     courses.forEach((course) => {
         const courseElement = createCourseElement(course);
 
@@ -223,6 +274,16 @@ function addClickListeners() {
         const focusModeToggle = target.closest("#focus-mode-toggle");
         if (focusModeToggle) {
             chrome.storage.local.set({ focusMode: target.checked });
+        }
+
+        const completedHiddenToggle = target.closest("#completed-hidden-toggle");
+        if (completedHiddenToggle) {
+            chrome.storage.local.set({ hideCompletedCourses: target.checked });
+        }
+
+        const sortOrderSelect = target.closest("#sort-order-select");
+        if (sortOrderSelect) {
+            chrome.storage.local.set({ sortOrder: target.value });
         }
 
         const summary = target.closest(".courses-summary");
