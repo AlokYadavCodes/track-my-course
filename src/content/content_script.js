@@ -36,8 +36,7 @@ const SELECTORS = {
         },
     },
     homePage: {
-        homeFeed: "ytd-rich-grid-renderer #contents",
-        gridRenderer: "ytd-rich-grid-renderer",
+        homePage: "ytd-browse[page-subtype=home]",
     },
 };
 
@@ -1925,60 +1924,15 @@ async function renderHomeCoursesSection({ signal }) {
 
     coursesSection.append(sectionTitle, coursesScroller);
 
-    const [homeFeed, gridRenderer] = await Promise.all([
-        waitForElement({
-            selector: SELECTORS.homePage.homeFeed,
-            signal,
-        }),
-        waitForElement({
-            selector: SELECTORS.homePage.gridRenderer,
-            signal,
-        }),
-    ]);
+    const homePage = await waitForElement({
+        selector: SELECTORS.homePage.homePage,
+        signal,
+    });
 
     if (signal.aborted) return;
-
-    const ensureInserted = () => {
-        if (homeFeed.firstChild !== coursesSection) {
-            homeFeed.insertBefore(coursesSection, homeFeed.firstChild);
-        }
-    };
-
-    const updateVisibility = () => {
-        const isFiltered = gridRenderer.hasAttribute("is-filtered-feed");
-        coursesSection.style.display = isFiltered ? "none" : "block";
-    };
-
-    ensureInserted();
-    updateVisibility();
-
-    const feedObserver = new MutationObserver(() => {
-        if (signal.aborted) {
-            feedObserver.disconnect();
-            return;
-        }
-        ensureInserted();
-    });
-
-    feedObserver.observe(homeFeed, { childList: true });
-
-    const filterObserver = new MutationObserver(() => {
-        if (signal.aborted) {
-            filterObserver.disconnect();
-            return;
-        }
-        updateVisibility();
-    });
-
-    filterObserver.observe(gridRenderer, {
-        attributes: true,
-        attributeFilter: ["is-filtered-feed"],
-    });
-
-    signal.addEventListener("abort", () => {
-        feedObserver.disconnect();
-        filterObserver.disconnect();
-    });
+    if (homePage.firstChild !== coursesSection) {
+        homePage.insertBefore(coursesSection, homePage.firstChild);
+    }
 }
 
 function createCourseCard(course) {

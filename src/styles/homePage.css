@@ -21,13 +21,21 @@ html[dark] {
     --tmc-progress-fill: #3ea6ff;
 }
 
+/* this is a workaround for stopping ui flicker when using z-index:2019 on .tmc-home-section and feed is not hidden by Unhook (nothing serious) */
+ytd-browse:has(ytd-two-column-browse-results-renderer[style*="touch-action: unset"])
+    .tmc-home-section {
+    z-index: 0;
+}
+
 .tmc-home-section {
     width: 100%;
-    margin-bottom: 24px;
+    margin: 12px 0;
     display: flex;
     flex-direction: column;
     background-color: transparent;
     border-bottom: 1px solid var(--tmc-divider);
+    position: relative;
+    z-index: 2019; /* Needed only when Unhook hides the feed; prevents overlap with fixed frosted-glass (z-index: 2018) */
 }
 
 .tmc-home-section-title {
