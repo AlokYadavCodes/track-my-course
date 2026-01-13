@@ -288,11 +288,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
     if (changes.hideCompletedCourses) {
         state.hideCompletedCourses = changes.hideCompletedCourses.newValue;
+        if (state.currentPage === PAGE_TYPE.HOME) {
+            updateHomeCoursesContent();
+        }
         return;
     }
 
     if (changes.sortOrder) {
         state.sortOrder = changes.sortOrder.newValue;
+        if (state.currentPage === PAGE_TYPE.HOME) {
+            updateHomeCoursesContent();
+        }
         return;
     }
 
@@ -1935,20 +1941,7 @@ async function renderHomeCoursesSection({ signal }) {
     const coursesScroller = document.createElement("div");
     coursesScroller.className = "tmc-home-courses-scroller";
 
-    if (state.sortOrder === "mostCompleted") {
-        courses.sort(
-            (a, b) => calculateCourseProgress(b) - calculateCourseProgress(a)
-        );
-    } else if (state.sortOrder === "leastCompleted") {
-        courses.sort(
-            (a, b) => calculateCourseProgress(a) - calculateCourseProgress(b)
-        );
-    } else {
-        courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
-    }
-    if (state.hideCompletedCourses) {
-        courses = courses.filter((c) => calculateCourseProgress(c) < 100);
-    }
+    courses = sortAndFilterCourses(courses);
     courses.forEach((course) => {
         const card = createCourseCard(course);
         coursesScroller.append(card);
@@ -2116,6 +2109,12 @@ async function updateHomeCoursesContent({ signal } = {}) {
 
     const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
     homeCoursesScroller.innerHTML = "";
+    courses = sortAndFilterCourses(courses);
+    for (const course of courses) {
+        homeCoursesScroller.append(createCourseCard(course));
+    }
+}
+function sortAndFilterCourses(courses) {
     if (state.sortOrder === "mostCompleted") {
         courses.sort(
             (a, b) => calculateCourseProgress(b) - calculateCourseProgress(a)
@@ -2130,7 +2129,5 @@ async function updateHomeCoursesContent({ signal } = {}) {
     if (state.hideCompletedCourses) {
         courses = courses.filter((c) => calculateCourseProgress(c) < 100);
     }
-    for (const course of courses) {
-        homeCoursesScroller.append(createCourseCard(course));
-    }
+    return courses;
 }

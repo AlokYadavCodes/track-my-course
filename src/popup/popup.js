@@ -276,16 +276,6 @@ function addClickListeners() {
             chrome.storage.local.set({ focusMode: target.checked });
         }
 
-        const completedHiddenToggle = target.closest("#completed-hidden-toggle");
-        if (completedHiddenToggle) {
-            chrome.storage.local.set({ hideCompletedCourses: target.checked });
-        }
-
-        const sortOrderSelect = target.closest("#sort-order-select");
-        if (sortOrderSelect) {
-            chrome.storage.local.set({ sortOrder: target.value });
-        }
-
         const summary = target.closest(".courses-summary");
         if (summary) {
             const coursesContainer = summary.nextElementSibling;
