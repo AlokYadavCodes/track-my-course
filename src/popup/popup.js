@@ -182,8 +182,9 @@ function createCourseElement(course) {
     thumbnailOverlay.className = "thumbnail-overlay";
     const overlayIcon = document.createElement("div");
     overlayIcon.className = "icon";
-    overlayIcon.innerHTML = course.lastWatchedVideoId && completedPercentage < 100
-        ? `<svg
+    if (course.lastWatchedVideoId && completedPercentage < 100) {
+        // Resume icon
+        overlayIcon.innerHTML = `<svg
             xmlns="http://www.w3.org/2000/svg"
             height="28"
             width="28"
@@ -194,8 +195,10 @@ function createCourseElement(course) {
             style="pointer-events: none; display: inherit; width: 100%; height: 100%;"
         >
             <path d="M5 4.623V19.38a1.5 1.5 0 002.26 1.29L22 12 7.26 3.33A1.5 1.5 0 005 4.623Z"></path>
-        </svg>`
-        : `<svg
+        </svg>`;
+    } else {
+        // View Course icon
+        overlayIcon.innerHTML = `<svg
             xmlns="http://www.w3.org/2000/svg"
             height="28"
             width="28"
@@ -207,9 +210,12 @@ function createCourseElement(course) {
         >
             <path d="M11.485 2.143 1.486 8.148a1 1 0 000 1.715l10 5.994a1 1 0 001.028 0L21 10.77V18a1 1 0 002 0V9a1 1 0 00-.485-.852l-10-6.005a1 1 0 00-1.03 0ZM19 16.926V14.3l-5.458 3.27a3 3 0 01-3.084 0L5 14.3v2.625a2 2 0 00.992 1.73l5.504 3.21a1 1 0 001.008 0l5.504-3.212A2 2 0 0019 16.926Z"></path>
         </svg>`;
+    }
+
     const overlayText = document.createElement("div");
     overlayText.className = "text";
-    overlayText.textContent = course.lastWatchedVideoId && completedPercentage < 100 ? "Resume" : "View Course";
+    overlayText.textContent =
+        course.lastWatchedVideoId && completedPercentage < 100 ? "Resume" : "View Course";
     thumbnailOverlay.append(overlayIcon, overlayText);
     thumbnail.append(thumbnailOverlay);
 
