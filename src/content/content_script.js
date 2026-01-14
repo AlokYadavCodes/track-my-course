@@ -1960,7 +1960,7 @@ function createCourseCard(course) {
     thumbnailOverlay.className = "tmc-home-course-card-thumbnail-overlay";
     const overlayIcon = document.createElement("div");
     overlayIcon.className = "icon";
-    if (course.lastWatchedVideoId && completedPercentage < 100) {
+    if (course.lastWatchedVideoId && progressPercent < 100) {
         // Resume icon
         overlayIcon.innerHTML = `<svg
             xmlns="http://www.w3.org/2000/svg"
