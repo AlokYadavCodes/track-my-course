@@ -1,4 +1,4 @@
-function getCompletedPercentage(course) {
+function getProgressPercent(course) {
     const { watchedDuration, totalDuration } = course;
     if (
         !totalDuration ||
@@ -82,7 +82,7 @@ async function renderCourses(courses) {
     courses.forEach((course) => {
         const courseElement = createCourseElement(course);
 
-        if (getCompletedPercentage(course) === 100) {
+        if (getProgressPercent(course) === 100) {
             completedCoursesCount++;
             completedCoursesEl.append(courseElement);
         } else {
@@ -101,7 +101,7 @@ async function renderCourses(courses) {
 }
 
 function createCourseElement(course) {
-    const completedPercentage = getCompletedPercentage(course);
+    const progressPercent = getProgressPercent(course);
 
     const courseElement = document.createElement("div");
     courseElement.className = "course";
@@ -131,7 +131,7 @@ function createCourseElement(course) {
     thumbnailOverlay.className = "thumbnail-overlay";
     const overlayIcon = document.createElement("div");
     overlayIcon.className = "icon";
-    if (course.lastWatchedVideoId && completedPercentage < 100) {
+    if (course.lastWatchedVideoId && progressPercent < 100) {
         // Resume icon
         overlayIcon.innerHTML = `<svg
             xmlns="http://www.w3.org/2000/svg"
@@ -164,7 +164,7 @@ function createCourseElement(course) {
     const overlayText = document.createElement("div");
     overlayText.className = "text";
     overlayText.textContent =
-        course.lastWatchedVideoId && completedPercentage < 100 ? "Resume" : "View Course";
+        course.lastWatchedVideoId && progressPercent < 100 ? "Resume" : "View Course";
     thumbnailOverlay.append(overlayIcon, overlayText);
     thumbnail.append(thumbnailOverlay);
 
@@ -178,14 +178,14 @@ function createCourseElement(course) {
     title.textContent = course.courseName || "Untitled Course";
     const completion = document.createElement("p");
     completion.className = "completion";
-    completion.textContent = `${completedPercentage}% completed`;
+    completion.textContent = `${progressPercent}% completed`;
 
     // Progress bar
     const progressBar = document.createElement("div");
     progressBar.className = "progress-bar";
     const progressFill = document.createElement("div");
     progressFill.className = "progress-fill";
-    progressFill.style.width = `${completedPercentage}%`;
+    progressFill.style.width = `${progressPercent}%`;
     progressBar.append(progressFill);
 
     info.append(title, completion, progressBar);

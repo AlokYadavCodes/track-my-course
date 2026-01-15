@@ -672,7 +672,7 @@ async function renderWPProgressDiv({ signal }) {
 
     const progressBar = document.createElement("div");
     progressBar.id = "progress-bar";
-    progressBar.style.width = `${calculateCompletionPercentage()}%`;
+    progressBar.style.width = `${getProgressPercent()}%`;
 
     progressBarContainer.append(progressBar);
     progressBarOuter.append(progressBarContainer);
@@ -681,9 +681,9 @@ async function renderWPProgressDiv({ signal }) {
     const completedDiv = document.createElement("div");
     completedDiv.className = "completed-in";
 
-    const completedPercent = document.createElement("b");
-    completedPercent.id = "completed-percentage";
-    completedPercent.textContent = calculateCompletionPercentage();
+    const progressPercent = document.createElement("b");
+    progressPercent.id = "progress-percent";
+    progressPercent.textContent = getProgressPercent();
 
     const percentText = document.createElement("b");
     percentText.textContent = "%";
@@ -692,7 +692,7 @@ async function renderWPProgressDiv({ signal }) {
     investedTime.id = "invested-time";
     investedTime.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
 
-    completedDiv.append(completedPercent, percentText, " completed in ", investedTime);
+    completedDiv.append(progressPercent, percentText, " completed in ", investedTime);
 
     // Delete button
     const deleteBtn = document.createElement("div");
@@ -1021,8 +1021,8 @@ function refreshWatchPageUI({ signal }) {
         state.videoWatchStatus
     ).length;
 
-    const percentage = calculateCompletionPercentage();
-    progressDiv.querySelector("#completed-percentage").textContent = percentage;
+    const percentage = getProgressPercent();
+    progressDiv.querySelector("#progress-percent").textContent = percentage;
     progressDiv.querySelector("#progress-bar").style.width = `${percentage}%`;
 
     if (signal.aborted) return;
@@ -1266,7 +1266,7 @@ function parseDurationToSeconds(durationString) {
     return 0;
 }
 
-function calculateCompletionPercentage() {
+function getProgressPercent() {
     const watchedSeconds =
         state.watchedDuration.hours * 3600 +
         state.watchedDuration.minutes * 60 +
