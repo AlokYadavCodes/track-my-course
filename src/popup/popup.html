@@ -21,6 +21,23 @@
                     <span class="focus-mode-label">Focus Mode</span>
                 </div>
             </header>
+            <header>
+                <div class="header-left">
+                    <h4 class="sort-label">Sort by: </h4>
+                    <select id="sort-order-select" class="sort-dropdown">
+                        <option value="lastInteractedAt">Last Interacted</option>
+                        <option value="mostCompleted">Most Completed</option>
+                        <option value="leastCompleted">Least Completed</option>
+                    </select>
+                </div>
+                <div class="header-right">
+                    <label class="switch">
+                        <input type="checkbox" id="completed-hidden-toggle" />
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="completed-label">Hide Completed</span>
+                </div>
+            </header>
             <main>
                 <div id="welcome-message">
                     <h2>Welcome to TrackMyCourse!</h2>
