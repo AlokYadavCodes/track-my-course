@@ -384,7 +384,7 @@ async function renderWPStartCourseBtn({ signal }) {
             state.courseImgSrc = await imgSrcToBase64(playlistItems.querySelector("img")?.src);
             state.courseName = document.querySelector(
                 "#playlist:not([hidden]) #header-contents .title"
-            ).title;
+            ).textContent;
             setToStorage();
             showToast("Course Started");
         } catch (err) {
