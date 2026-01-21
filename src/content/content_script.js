@@ -23,7 +23,7 @@ const SELECTORS = {
         courseTextEl: ".metadata-wrapper badge-shape",
         playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
         playlistNameEl:
-            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model span",
+            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model h1 span",
         recommendations: "ytd-watch-next-secondary-results-renderer",
 
         ytCourse: {
