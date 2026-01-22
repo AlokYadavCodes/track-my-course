@@ -74,10 +74,17 @@ async function updateStateVariables({ signal }) {
     state.playlistId = getPlaylistId(window.location.href);
 
     const defaultDuration = { hours: 0, minutes: 0, seconds: 0 };
-    const storageData = await getFromStorage([state.playlistId, "focusMode"]);
+
+    const keysToFetch = ["focusMode", "hideCompletedCourses", "sortOrder"];
+    if (state.playlistId) {
+        keysToFetch.push(state.playlistId);
+    }
+    const storageData = await getFromStorage(keysToFetch);
 
     const courseData = storageData[state.playlistId] || {};
     state.focusMode = storageData.focusMode || false;
+    state.hideCompletedCourses = storageData.hideCompletedCourses || false;
+    state.sortOrder = storageData.sortOrder || "lastInteractedAt";
 
     state.videoWatchStatus = courseData.videoWatchStatus ?? {};
     state.totalDuration = courseData.totalDuration ?? {
@@ -120,7 +127,7 @@ async function handleFullPageUpdate(pageType = state.currentPage) {
         const { signal } = state.activePageUpdateController;
 
         performCleanUp();
-        if (pageType === PAGE_TYPE.WATCH || pageType === PAGE_TYPE.PLAYLIST)
+        if (pageType === PAGE_TYPE.WATCH || pageType === PAGE_TYPE.PLAYLIST || pageType === PAGE_TYPE.HOME)
             await updateStateVariables({ signal });
         if (pageType === PAGE_TYPE.WATCH) toggleFocusModeUI(state.focusMode);
 
@@ -275,6 +282,22 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     if (changes.focusMode) {
         state.focusMode = changes.focusMode.newValue;
         toggleFocusModeUI(state.focusMode);
+        return;
+    }
+
+    if (changes.hideCompletedCourses) {
+        state.hideCompletedCourses = changes.hideCompletedCourses.newValue;
+        if (state.currentPage === PAGE_TYPE.HOME) {
+            updateHomeCoursesContent();
+        }
+        return;
+    }
+
+    if (changes.sortOrder) {
+        state.sortOrder = changes.sortOrder.newValue;
+        if (state.currentPage === PAGE_TYPE.HOME) {
+            updateHomeCoursesContent();
+        }
         return;
     }
 
@@ -1900,8 +1923,8 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
 
 async function renderHomeCoursesSection({ signal }) {
     const storageData = await getFromStorage(null);
-    const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
+    let courses = Object.entries(storageData)
+        .filter(([key]) => key !== "focusMode" && key !== "hideCompletedCourses" && key !== "sortOrder")
         .map(([key, value]) => ({ ...value, id: key }));
 
     if (courses.length === 0 || signal.aborted) return;
@@ -1917,6 +1940,7 @@ async function renderHomeCoursesSection({ signal }) {
     const coursesScroller = document.createElement("div");
     coursesScroller.className = "tmc-home-courses-scroller";
 
+    courses = sortAndFilterCourses(courses);
     courses.forEach((course) => {
         const card = createCourseCard(course);
         coursesScroller.append(card);
@@ -1939,11 +1963,7 @@ function createCourseCard(course) {
     const card = document.createElement("div");
     card.className = "tmc-home-course-card";
 
-    const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
-
-    const totalSec = toSeconds(course.totalDuration);
-    const watchedSec = toSeconds(course.watchedDuration);
-    const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
+    const progressPercent = calculateCourseProgress(course);
 
     const courseHref = course.lastWatchedVideoId
         ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
@@ -2022,6 +2042,14 @@ function createCourseCard(course) {
     return card;
 }
 
+function calculateCourseProgress(course) {
+    const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
+    const totalSec = toSeconds(course.totalDuration);
+    const watchedSec = toSeconds(course.watchedDuration);
+    const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
+    return progressPercent;
+}
+
 async function updateHomeCoursesContent({ signal } = {}) {
     if (!signal) signal = state.activePageUpdateController.signal;
     const homeCoursesSection = document.querySelector(".tmc-home-section");
@@ -2031,8 +2059,8 @@ async function updateHomeCoursesContent({ signal } = {}) {
     }
 
     const storageData = await getFromStorage(null);
-    const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
+    let courses = Object.entries(storageData)
+        .filter(([key]) => key !== "focusMode" && key !== "hideCompletedCourses" && key !== "sortOrder")
         .map(([key, value]) => ({ ...value, id: key }));
     if (courses.length === 0) {
         removeHomeCoursesSection();
@@ -2041,8 +2069,25 @@ async function updateHomeCoursesContent({ signal } = {}) {
 
     const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
     homeCoursesScroller.innerHTML = "";
-    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
+    courses = sortAndFilterCourses(courses);
     for (const course of courses) {
         homeCoursesScroller.append(createCourseCard(course));
     }
+}
+function sortAndFilterCourses(courses) {
+    if (state.sortOrder === "mostCompleted") {
+        courses.sort(
+            (a, b) => calculateCourseProgress(b) - calculateCourseProgress(a)
+        );
+    } else if (state.sortOrder === "leastCompleted") {
+        courses.sort(
+            (a, b) => calculateCourseProgress(a) - calculateCourseProgress(b)
+        );
+    } else {
+        courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
+    }
+    if (state.hideCompletedCourses) {
+        courses = courses.filter((c) => calculateCourseProgress(c) < 100);
+    }
+    return courses;
 }
