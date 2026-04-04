@@ -14,16 +14,16 @@ const SELECTORS = {
 
     playlistPage: {
         startCourseBtnWideScreenRefEl:
-            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info:has(yt-description-preview-view-model)",
+            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         startCourseBtnSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
         contentDiv: "#contents:has(>ytd-playlist-video-renderer)",
         progressDivWideScreenRefEl:
-            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info:has(yt-description-preview-view-model)",
+            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         progressDivSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
         courseTextEl: ".metadata-wrapper badge-shape",
-        playlistTextEl: ".page-header-sidebar .yt-content-metadata-view-model__metadata-text",
+        playlistTextEl: ".page-header-sidebar .ytContentMetadataViewModelMetadataText",
         playlistNameEl:
-            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .yt-page-header-view-model__page-header-headline-info yt-dynamic-text-view-model h1 span",
+            "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo yt-dynamic-text-view-model h1 span",
         recommendations: "ytd-watch-next-secondary-results-renderer",
 
         ytCourse: {
@@ -1651,7 +1651,7 @@ async function isYtCourse({ signal }) {
 
         const timeoutId = setTimeout(() => {
             observer.disconnect();
-            reject(createAbortError());
+            reject(new Error("Timed out while determining if it's a course or standard playlist"));
         }, 120000); // 2 minutes timeout
 
         const abortListener = () => {
