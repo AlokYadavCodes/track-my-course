@@ -1,6 +1,7 @@
 const SELECTORS = {
     ytNavigationProgress: "yt-page-navigation-progress",
     videoDuration: ".yt-badge-shape__text",
+    playerVideo: "video.html5-main-video",
 
     watchPage: {
         playlistItems: "#playlist:not([hidden]) #items",
@@ -58,6 +59,7 @@ const state = {
 
     activePageUpdateController: null,
     investedTimeTrackerCleanup: null,
+    autoCompletionTrackerCleanup: null,
     PPPlacementHandler: null,
     mediaQuery: null,
     playlistActions: null,
@@ -155,6 +157,11 @@ async function handlePartialUpdate() {
         state.lastWatchedVideoId = getVideoId(window.location.href);
         state.lastInteractedAt = Date.now();
         setToStorage();
+        await setupAutoTickForCurrentVideo({
+            signal,
+            videoId: state.lastWatchedVideoId,
+            isAlreadyChecked: state.videoWatchStatus[state.lastWatchedVideoId] ?? true,
+        });
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error("Unexpected error during partial update:", err);
@@ -183,9 +190,15 @@ async function updateWatchPage({ signal }) {
         state.lastWatchedVideoId = getVideoId(window.location.href);
         state.lastInteractedAt = Date.now();
         setToStorage();
+        await setupAutoTickForCurrentVideo({
+            signal,
+            videoId: state.lastWatchedVideoId,
+            isAlreadyChecked: state.videoWatchStatus[state.lastWatchedVideoId] ?? true,
+        });
     } else {
         removeWPProgressDiv(); // Clean up progress bar if it exists
         removeVideoCheckboxes(); // Clean up checkboxes if exists
+        clearAutoCompletionTracker();
         const videoCount = playlistItems.children.length;
         if (videoCount >= 200) {
             await renderDisabledStartCourseBtn({ signal });
@@ -1237,7 +1250,59 @@ function performCleanUp() {
     removeProgressDiv();
     removePPMediaQueryListener();
     removeHomeCoursesSection();
+    clearAutoCompletionTracker();
     if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
+}
+
+function clearAutoCompletionTracker() {
+    if (state.autoCompletionTrackerCleanup) state.autoCompletionTrackerCleanup();
+}
+
+async function setupAutoTickForCurrentVideo({ signal, videoId, isAlreadyChecked }) {
+    clearAutoCompletionTracker();
+
+    if (!videoId || isAlreadyChecked || signal?.aborted) return;
+
+    const videoEl = await waitForElement({
+        selector: SELECTORS.playerVideo,
+        signal,
+    });
+
+    if (!videoEl || signal?.aborted) return;
+
+    let isSyncing = false;
+    const onTimeUpdate = async () => {
+        if (isSyncing || signal?.aborted) return;
+
+        const duration = videoEl.duration;
+        if (!Number.isFinite(duration) || duration <= 0) return;
+
+        const watchedRatio = videoEl.currentTime / duration;
+        if (watchedRatio < 0.9) return;
+
+        isSyncing = true;
+        const videoDurationEl = document.querySelector(".ytp-time-duration");
+        const videoDuration = videoDurationEl
+            ? videoDurationEl.textContent
+            : secondsToDurationString(Math.round(duration));
+
+        try {
+            await synchronizeVideoStatus(videoId, true, videoDuration);
+        } finally {
+            clearAutoCompletionTracker();
+        }
+    };
+
+    const cleanup = () => {
+        videoEl.removeEventListener("timeupdate", onTimeUpdate);
+        if (state.autoCompletionTrackerCleanup === cleanup) {
+            state.autoCompletionTrackerCleanup = null;
+        }
+    };
+
+    state.autoCompletionTrackerCleanup = cleanup;
+    videoEl.addEventListener("timeupdate", onTimeUpdate);
+    signal?.addEventListener("abort", cleanup, { once: true });
 }
 
 // --- UTILITY FUNCTIONS ---
@@ -1410,6 +1475,19 @@ function formatDuration(seconds) {
         minutes: Math.floor((seconds % 3600) / 60),
         seconds: seconds % 60,
     };
+}
+
+function secondsToDurationString(totalSeconds) {
+    if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "0:00";
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+
+    if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 async function scanPlaylistForCourseData({ videoElements, signal }) {
@@ -1877,6 +1955,11 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
     if (existingWrapper) {
         const existingCheckbox = existingWrapper.querySelector("input[type=checkbox]");
         existingCheckbox.checked = isWatched;
+        await setupAutoTickForCurrentVideo({
+            signal,
+            videoId,
+            isAlreadyChecked: isWatched,
+        });
         return;
     }
 
@@ -1896,6 +1979,11 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
     });
 
     titleContainer.append(checkboxWrapper);
+    await setupAutoTickForCurrentVideo({
+        signal,
+        videoId,
+        isAlreadyChecked: isWatched,
+    });
 }
 
 async function renderHomeCoursesSection({ signal }) {
