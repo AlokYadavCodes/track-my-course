@@ -154,7 +154,7 @@ async function handlePartialUpdate() {
 
         state.lastWatchedVideoId = getVideoId(window.location.href);
         state.lastInteractedAt = Date.now();
-        setToStorage();
+        saveCourseState();
     } catch (err) {
         if (err.name !== "AbortError") {
             console.error("Unexpected error during partial update:", err);
@@ -182,7 +182,7 @@ async function updateWatchPage({ signal }) {
 
         state.lastWatchedVideoId = getVideoId(window.location.href);
         state.lastInteractedAt = Date.now();
-        setToStorage();
+        saveCourseState();
     } else {
         removeWPProgressDiv(); // Clean up progress bar if it exists
         removeVideoCheckboxes(); // Clean up checkboxes if exists
@@ -385,7 +385,7 @@ async function renderWPStartCourseBtn({ signal }) {
             state.courseName = document.querySelector(
                 "#playlist:not([hidden]) #header-contents .title"
             ).title;
-            setToStorage();
+            saveCourseState();
             showToast("Course Started");
         } catch (err) {
             if (err.name !== "AbortError") {
@@ -567,9 +567,9 @@ function setupCheckbox({ video, pageType, signal }) {
  */
 async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
     const storageData = await getFromStorage(null);
-    const playlistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+    const playlistIds = getCourseKeys(storageData);
 
-    const videoDurationSeconds = parseDurationToSeconds(videoDuration);
+    const videoDurationSeconds = hmsToSeconds(videoDuration);
     const updatedCourses = {};
 
     for (const playlistId of playlistIds) {
@@ -583,15 +583,12 @@ async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
             // Only update if the status has changed for this video in this course
             if (oldStatus !== newStatus) {
                 course.videoWatchStatus[videoId] = newStatus;
-                let watchedSeconds =
-                    course.watchedDuration.hours * 3600 +
-                    course.watchedDuration.minutes * 60 +
-                    course.watchedDuration.seconds;
+                let watchedSeconds = durationToSeconds(course.watchedDuration);
 
                 if (isChecked) watchedSeconds += videoDurationSeconds;
                 else watchedSeconds = Math.max(0, watchedSeconds - videoDurationSeconds);
 
-                course.watchedDuration = formatDuration(watchedSeconds);
+                course.watchedDuration = secondsToDuration(watchedSeconds);
                 updatedCourses[playlistId] = course;
 
                 if (playlistId === state.playlistId) {
@@ -602,7 +599,7 @@ async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
         }
     }
 
-    chrome.storage.local.set(updatedCourses);
+    saveToStorage(updatedCourses);
     const coursesAffected = Object.keys(updatedCourses).length;
     const syncMessage =
         coursesAffected > 1 ? `Progress updated in ${coursesAffected} courses` : "Progress updated";
@@ -672,7 +669,7 @@ async function renderWPProgressDiv({ signal }) {
 
     const progressBar = document.createElement("div");
     progressBar.id = "progress-bar";
-    progressBar.style.width = `${getProgressPercent()}%`;
+    progressBar.style.width = `${getProgressPercent(state)}%`;
 
     progressBarContainer.append(progressBar);
     progressBarOuter.append(progressBarContainer);
@@ -683,7 +680,7 @@ async function renderWPProgressDiv({ signal }) {
 
     const progressPercent = document.createElement("b");
     progressPercent.id = "progress-percent";
-    progressPercent.textContent = getProgressPercent();
+    progressPercent.textContent = getProgressPercent(state);
 
     const percentText = document.createElement("b");
     percentText.textContent = "%";
@@ -753,7 +750,7 @@ async function renderWPProgressDiv({ signal }) {
     confirmBtn.addEventListener("click", async (e) => {
         e.stopPropagation();
         if (state.investedTimeTrackerCleanup) state.investedTimeTrackerCleanup();
-        await chrome.storage.local.remove(state.playlistId);
+        await removeFromStorage(state.playlistId);
         showToast("Course Removed");
     });
 }
@@ -902,7 +899,7 @@ async function renderPPProgressDiv({ signal }) {
     cancelBtn.addEventListener("click", () => progressDiv.classList.remove("deleting"));
     confirmBtn.addEventListener("click", async () => {
         removePPMediaQueryListener();
-        await chrome.storage.local.remove(state.playlistId);
+        await removeFromStorage(state.playlistId);
         showToast("Course Removed");
     });
 }
@@ -1021,7 +1018,7 @@ function refreshWatchPageUI({ signal }) {
         state.videoWatchStatus
     ).length;
 
-    const percentage = getProgressPercent();
+    const percentage = getProgressPercent(state);
     progressDiv.querySelector("#progress-percent").textContent = percentage;
     progressDiv.querySelector("#progress-bar").style.width = `${percentage}%`;
 
@@ -1241,19 +1238,7 @@ function performCleanUp() {
 }
 
 // --- UTILITY FUNCTIONS ---
-function getPlaylistId(url) {
-    if (!url || !url.includes("list=")) return null;
-    const playlistId = url.split("list=")[1].split("&")[0];
-    return playlistId;
-}
-
-function getVideoId(url) {
-    if (!url || !url.includes("v=")) return null;
-    const videoId = url.split("v=")[1].split("&")[0];
-    return videoId;
-}
-
-function parseDurationToSeconds(durationString) {
+function hmsToSeconds(durationString) {
     const parts = durationString.trim().split(":").map(Number);
     if (parts.length === 3) {
         // [HH, MM, SS]
@@ -1264,19 +1249,6 @@ function parseDurationToSeconds(durationString) {
         return parts[0] * 60 + parts[1];
     }
     return 0;
-}
-
-function getProgressPercent() {
-    const watchedSeconds =
-        state.watchedDuration.hours * 3600 +
-        state.watchedDuration.minutes * 60 +
-        state.watchedDuration.seconds;
-    const totalSeconds =
-        state.totalDuration.hours * 3600 +
-        state.totalDuration.minutes * 60 +
-        state.totalDuration.seconds;
-    if (totalSeconds === 0) return 0;
-    return Math.round((watchedSeconds / totalSeconds) * 100);
 }
 
 function createAbortError() {
@@ -1381,35 +1353,24 @@ function addDurationTo(duration, target /* "watched" | "total" */) {
     if (target !== "watched" && target !== "total") {
         throw new Error(`Invalid target: ${target}. Must be "watched" or "total"`);
     }
-    const secondsToAdd = parseDurationToSeconds(duration);
+    const secondsToAdd = hmsToSeconds(duration);
     let bucket = state[`${target}Duration`];
-    let totalSeconds = bucket.hours * 3600 + bucket.minutes * 60 + bucket.seconds;
+    let totalSeconds = durationToSeconds(bucket);
     totalSeconds += secondsToAdd;
 
     // Normalize back to h:m:s
-    state[`${target}Duration`] = formatDuration(totalSeconds);
+    state[`${target}Duration`] = secondsToDuration(totalSeconds);
 }
 
 function removeFromWatchDuration(videoDuration) {
-    const removeSeconds = parseDurationToSeconds(videoDuration);
-    let currentSeconds =
-        state.watchedDuration.hours * 3600 +
-        state.watchedDuration.minutes * 60 +
-        state.watchedDuration.seconds;
+    const removeSeconds = hmsToSeconds(videoDuration);
+    let currentSeconds = durationToSeconds(state.watchedDuration);
 
     currentSeconds -= removeSeconds;
 
     // Normalize back to h:m:s
-    state.watchedDuration = formatDuration(currentSeconds);
-    setToStorage();
-}
-
-function formatDuration(seconds) {
-    return {
-        hours: Math.floor(seconds / 3600),
-        minutes: Math.floor((seconds % 3600) / 60),
-        seconds: seconds % 60,
-    };
+    state.watchedDuration = secondsToDuration(currentSeconds);
+    saveCourseState();
 }
 
 async function scanPlaylistForCourseData({ videoElements, signal }) {
@@ -1425,7 +1386,7 @@ async function scanPlaylistForCourseData({ videoElements, signal }) {
                 parentEl: video,
                 signal,
             });
-            totalSeconds += parseDurationToSeconds(durationEl.textContent);
+            totalSeconds += hmsToSeconds(durationEl.textContent);
 
             const linkEl =
                 video.querySelector("#wc-endpoint") || video.querySelector("#video-title");
@@ -1536,37 +1497,22 @@ async function updatePlaylistData() {
         left: 0,
         behavior: "instant",
     });
-    setToStorage();
+    saveCourseState();
 }
 
-async function getFromStorage(key) {
-    try {
-        return await chrome.storage.local.get(key);
-    } catch (err) {
-        return {};
-    }
-}
-
-function setToStorage() {
-    chrome.storage.local.set(
-        {
-            [state.playlistId]: {
-                totalDuration: state.totalDuration,
-                watchedDuration: state.watchedDuration,
-                videoWatchStatus: state.videoWatchStatus,
-                investedTime: state.investedTime,
-                courseImgSrc: state.courseImgSrc,
-                courseName: state.courseName,
-                lastWatchedVideoId: state.lastWatchedVideoId,
-                lastInteractedAt: state.lastInteractedAt,
-            },
+function saveCourseState() {
+    saveToStorage({
+        [state.playlistId]: {
+            totalDuration: state.totalDuration,
+            watchedDuration: state.watchedDuration,
+            videoWatchStatus: state.videoWatchStatus,
+            investedTime: state.investedTime,
+            courseImgSrc: state.courseImgSrc,
+            courseName: state.courseName,
+            lastWatchedVideoId: state.lastWatchedVideoId,
+            lastInteractedAt: state.lastInteractedAt,
         },
-        () => {
-            if (chrome.runtime.lastError) {
-                // ignore
-            }
-        }
-    );
+    });
 }
 
 async function getMoreVideos({ signal }) {
@@ -1666,12 +1612,6 @@ async function isYtCourse({ signal }) {
     });
 }
 
-async function isPlaylistTracked(playlistId) {
-    if (!playlistId) return;
-    const data = await chrome.storage.local.get(playlistId);
-    return Boolean(data[playlistId]);
-}
-
 function initializeInvestedTimeTracker({ signal }) {
     if (signal.aborted) throw createAbortError();
 
@@ -1692,7 +1632,7 @@ function initializeInvestedTimeTracker({ signal }) {
             if (investedTimeEl) {
                 investedTimeEl.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
             }
-            setToStorage();
+            saveCourseState();
         }, 30000);
     }
 
@@ -1787,7 +1727,7 @@ async function getCoursesContainingVideo(videoId) {
     if (!videoId) return [];
 
     const storageData = await getFromStorage(null);
-    const playlistIds = Object.keys(storageData).filter((key) => key !== "focusMode");
+    const playlistIds = getCourseKeys(storageData);
 
     const matchedCourses = [];
 
@@ -1900,9 +1840,7 @@ async function renderVideoWatchCheckbox({ signal, isWatched, videoId }) {
 
 async function renderHomeCoursesSection({ signal }) {
     const storageData = await getFromStorage(null);
-    const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
-        .map(([key, value]) => ({ ...value, id: key }));
+    const courses = getCourseEntries(storageData).map(([key, value]) => ({ ...value, id: key }));
 
     if (courses.length === 0 || signal.aborted) return;
     courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
@@ -1939,15 +1877,9 @@ function createCourseCard(course) {
     const card = document.createElement("div");
     card.className = "tmc-home-course-card";
 
-    const toSeconds = (d = {}) => (d.hours || 0) * 3600 + (d.minutes || 0) * 60 + (d.seconds || 0);
+    const progressPercent = getProgressPercent(course);
 
-    const totalSec = toSeconds(course.totalDuration);
-    const watchedSec = toSeconds(course.watchedDuration);
-    const progressPercent = totalSec > 0 ? Math.round((watchedSec / totalSec) * 100) : 0;
-
-    const courseHref = course.lastWatchedVideoId
-        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
-        : `https://www.youtube.com/playlist?list=${course.id}`;
+    const courseHref = getCourseHref(course);
 
     const thumbnail = document.createElement("a");
     thumbnail.className = "tmc-home-course-card-thumbnail";
@@ -2031,9 +1963,7 @@ async function updateHomeCoursesContent({ signal } = {}) {
     }
 
     const storageData = await getFromStorage(null);
-    const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
-        .map(([key, value]) => ({ ...value, id: key }));
+    const courses = getCourseEntries(storageData).map(([key, value]) => ({ ...value, id: key }));
     if (courses.length === 0) {
         removeHomeCoursesSection();
         return;

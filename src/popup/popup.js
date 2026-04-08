@@ -1,18 +1,3 @@
-function getProgressPercent(course) {
-    const { watchedDuration, totalDuration } = course;
-    if (
-        !totalDuration ||
-        (totalDuration.hours === 0 && totalDuration.minutes === 0 && totalDuration.seconds === 0)
-    ) {
-        return 0;
-    }
-    const watchedSeconds =
-        watchedDuration.hours * 3600 + watchedDuration.minutes * 60 + watchedDuration.seconds;
-    const totalSeconds =
-        totalDuration.hours * 3600 + totalDuration.minutes * 60 + totalDuration.seconds;
-    return Math.round((watchedSeconds / totalSeconds) * 100);
-}
-
 function updateCoursesCount() {
     const inProgressEl = document.querySelector(".in-progress-course-count");
     const completedEl = document.querySelector(".completed-course-count");
@@ -32,11 +17,9 @@ function createNoCourseElement(message) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const storageData = await chrome.storage.local.get(null);
+    const storageData = await getFromStorage(null);
     const isFocusModeEnabled = storageData.focusMode || false;
-    const courses = Object.entries(storageData)
-        .filter(([key]) => key !== "focusMode")
-        .map(([key, value]) => ({ ...value, id: key }));
+    const courses = getCourseEntries(storageData).map(([key, value]) => ({ ...value, id: key }));
 
     initializeFocusMode(isFocusModeEnabled);
     await renderCourses(courses);
@@ -112,9 +95,7 @@ function createCourseElement(course) {
     content.className = "course-content";
 
     // Course thumbnail
-    const courseHref = course.lastWatchedVideoId
-        ? `https://www.youtube.com/watch?v=${course.lastWatchedVideoId}&list=${course.id}`
-        : `https://www.youtube.com/playlist?list=${course.id}`;
+    const courseHref = getCourseHref(course);
 
     const thumbnail = document.createElement("a");
     thumbnail.className = "thumbnail";
@@ -228,7 +209,7 @@ function addClickListeners() {
 
         const focusModeToggle = target.closest("#focus-mode-toggle");
         if (focusModeToggle) {
-            chrome.storage.local.set({ focusMode: target.checked });
+            saveToStorage({ focusMode: target.checked });
         }
 
         const summary = target.closest(".courses-summary");
@@ -267,7 +248,7 @@ function addClickListeners() {
             }
             updateCoursesCount();
 
-            chrome.storage.local.remove(course.dataset.courseId);
+            removeFromStorage(course.dataset.courseId);
             course.classList.add("fading-out");
             course.addEventListener("transitionend", () => course.remove(), {
                 once: true,
