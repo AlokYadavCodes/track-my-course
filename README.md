@@ -46,6 +46,7 @@ _Ready to use TrackMyCourse?_ [Install now](https://chromewebstore.google.com/de
 - ⏱️ **Duration Tracking** – Know your watched and total time to plan your study sessions better.
 - 🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.
 - 💾 **Saved Locally** – Your progress stays saved in your browser, no sign-up needed.
+- 📦 **Import / Export** – Back up your data as a JSON file and restore it anytime, even across browsers.
 
 _All features appear seamlessly inside YouTube’s interface._
 
@@ -61,7 +62,17 @@ _All features appear seamlessly inside YouTube’s interface._
 2. Go to any YouTube playlist page.
 3. Click the **"Start Course"** button near the playlist title.
 
-Once enabled, the progress bar and checkboxes will automatically appear for that playlist.
+Once started, the progress bar and checkboxes will automatically appear for that playlist.
+
+### Backup & Restore (Import / Export)
+
+You can back up all your tracked courses and restore them later — useful when switching browsers, devices, or reinstalling the extension.
+
+1. Open the extension popup and click the **⋮** (menu) button in the top-right corner.
+2. **Export Data** — Downloads a `.json` backup file containing all your courses and progress.
+3. **Import Data** — Opens a dedicated import page where you can drag-and-drop (or browse for) a previously exported `.json` file.
+
+During import, the extension shows a preview of the courses in the backup. Only **new** courses are added — your existing courses and progress are never modified or deleted.
 
 ---
 
@@ -118,6 +129,8 @@ track-my-course/
 ├── src/               # Contains the main source code.
 │   ├── background/    # Handles background tasks.
 │   ├── content/       # Injects scripts directly into web pages.
+│   ├── pages/         # Standalone extension pages (e.g. import).
+│   │   └── import/    # Import / restore data page.
 │   ├── popup/         # Code for the extension's popup window.
 │   └── styles/        # Contains CSS files for UI elements injected onto pages.
 ├── manifests/         # Browser-specific manifests
