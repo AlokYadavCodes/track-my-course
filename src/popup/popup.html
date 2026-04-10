@@ -14,11 +14,73 @@
                     <h1>TrackMyCourse</h1>
                 </div>
                 <div class="header-right">
-                    <label class="switch">
-                        <input type="checkbox" id="focus-mode-toggle" />
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="focus-mode-label">Focus Mode</span>
+                    <div class="kebab-menu-container">
+                        <button class="kebab-menu-btn" id="kebab-menu-btn" title="More options">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="5" r="2"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <circle cx="12" cy="19" r="2"></circle>
+                            </svg>
+                        </button>
+                        <div class="kebab-dropdown" id="kebab-dropdown">
+                            <div class="kebab-dropdown-item focus-mode-item" id="focus-mode-item">
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <circle cx="12" cy="12" r="6" />
+                                    <circle cx="12" cy="12" r="2" />
+                                </svg>
+                                <span>Focus Mode</span>
+                                <div class="switch">
+                                    <input type="checkbox" id="focus-mode-toggle" />
+                                    <span class="slider round"></span>
+                                </div>
+                            </div>
+                            <div class="kebab-dropdown-divider"></div>
+                            <button class="kebab-dropdown-item" id="export-data-btn">
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Export Data
+                            </button>
+                            <button class="kebab-dropdown-item" id="import-data-btn">
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Import Data
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
             <main>

@@ -39,3 +39,22 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(
     },
     { url: [{ hostContains: "youtube.com" }] }
 );
+
+// handle export download requests from popup
+// the popup can't reliably trigger downloads itself (closes on focus loss)
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type !== "exportData") return;
+    let url;
+    if (typeof URL.createObjectURL === "function") {
+        // Firefox blocks data: URIs navigation or downloads
+        // But Firefox runs the background script in context of a hidden generated page,
+        // so it has access to DOM APIs and can use blob URLs
+        const blob = new Blob([message.json], { type: "application/json" });
+        url = URL.createObjectURL(blob);
+    } else {
+        // Chrome service worker has no DOM, use data URL instead
+        url = "data:application/json;charset=utf-8," + encodeURIComponent(message.json);
+    }
+
+    chrome.downloads.download({ url, filename: message.filename, saveAs: true });
+});
