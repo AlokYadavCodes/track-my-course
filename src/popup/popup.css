@@ -119,9 +119,16 @@ header img {
     align-items: center;
 }
 
-.focus-mode-label {
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
+.focus-mode-item {
+    cursor: pointer;
+}
+
+.focus-mode-item span {
+    flex: 1;
+}
+
+.focus-mode-item .switch {
+    margin-left: auto;
 }
 
 .switch {
@@ -499,4 +506,76 @@ input:checked + .slider:before {
 .footer-link:hover {
     opacity: 85%;
     text-decoration: underline;
+}
+
+/* Kebab Menu */
+.kebab-menu-container {
+    position: relative;
+    margin-left: 0.75rem;
+}
+
+.kebab-dropdown-divider {
+    height: 1px;
+    background-color: var(--border-primary);
+    margin: 0.25rem 0;
+}
+
+.kebab-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.kebab-menu-btn:hover {
+    background-color: var(--delete-icon-bg-hover);
+}
+
+.kebab-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    min-width: 10rem;
+    overflow: hidden;
+}
+
+.kebab-dropdown.open {
+    display: block;
+}
+
+.kebab-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.kebab-dropdown-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.kebab-dropdown-item svg {
+    flex-shrink: 0;
 }

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="import.css" />
+        <title>Import Data - TrackMyCourse</title>
+    </head>
+    <body>
+        <div class="import-card">
+            <div class="import-header">
+                <div class="import-header-left">
+                    <img src="../../../icons/logo_24.png" alt="TrackMyCourse Logo" />
+                    <h1>Import Data</h1>
+                </div>
+            </div>
+
+            <!-- step 1: file selection -->
+            <div id="step-select" class="step">
+                <div class="info-callout">
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <p>
+                        Importing adds only new courses. Your existing courses and progress will not
+                        be changed or deleted.
+                    </p>
+                </div>
+                <div class="drop-zone" id="drop-zone">
+                    <svg
+                        class="drop-zone-icon"
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    <p class="drop-zone-text">Drop your backup file here</p>
+                    <p class="drop-zone-hint">or</p>
+                    <label class="browse-btn" for="import-file-input">Browse Files</label>
+                    <input type="file" id="import-file-input" accept=".json" hidden />
+                    <p class="drop-zone-format">Only .json files exported from TrackMyCourse</p>
+                </div>
+            </div>
+
+            <!-- step 2: preview -->
+            <div id="step-preview" class="step hidden">
+                <div class="file-info">
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span id="file-name"></span>
+                </div>
+
+                <div class="preview-summary" id="preview-summary"></div>
+
+                <ul class="course-list" id="course-list"></ul>
+
+                <p class="import-note" id="import-note"></p>
+
+                <div class="preview-actions">
+                    <button class="btn btn-secondary" id="cancel-btn">Cancel</button>
+                    <button class="btn btn-primary" id="confirm-btn">Import</button>
+                </div>
+            </div>
+
+            <!-- step 3: result -->
+            <div id="step-result" class="step hidden">
+                <div class="result-icon" id="result-icon"></div>
+                <p class="result-message" id="result-message"></p>
+                <div class="result-actions">
+                    <button class="btn btn-secondary" id="import-another-btn">
+                        Import Another
+                    </button>
+                    <button class="btn btn-primary" id="close-tab-btn">Close Tab</button>
+                </div>
+            </div>
+
+            <!-- error state -->
+            <div id="step-error" class="step hidden">
+                <div class="result-icon error-icon">
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </div>
+                <p class="result-message error-text" id="error-message"></p>
+                <button class="btn btn-secondary" id="try-again-btn">Try Again</button>
+            </div>
+        </div>
+
+        <script src="../../shared/utils.js"></script>
+        <script src="import.js"></script>
+    </body>
+</html>

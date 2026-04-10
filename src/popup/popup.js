@@ -204,32 +204,64 @@ function createCourseElement(course) {
 }
 
 function addClickListeners() {
+    const menuDropdown = document.getElementById("kebab-dropdown");
+
     document.body.addEventListener("click", (e) => {
-        const target = e.target;
+        const clickedEl = e.target;
+        const isInsideDropdown = clickedEl.closest("#kebab-dropdown");
 
-        const focusModeToggle = target.closest("#focus-mode-toggle");
-        if (focusModeToggle) {
-            saveToStorage({ focusMode: target.checked });
-        }
-
-        const summary = target.closest(".courses-summary");
-        if (summary) {
-            const coursesContainer = summary.nextElementSibling;
-            const arrow = summary.querySelector("svg");
-            if (coursesContainer) coursesContainer.classList.toggle("hide");
-            if (arrow) arrow.classList.toggle("rotate");
+        // --- Kebab menu toggle ---
+        if (clickedEl.closest("#kebab-menu-btn")) {
+            menuDropdown.classList.toggle("open");
             return;
         }
 
-        const course = target.closest(".course");
-        if (!course) return;
+        // --- Focus mode toggle ---
+        if (clickedEl.closest("#focus-mode-item")) {
+            const focusModeCheckbox = document.getElementById("focus-mode-toggle");
+            focusModeCheckbox.checked = !focusModeCheckbox.checked;
+            saveToStorage({ focusMode: focusModeCheckbox.checked });
+            return;
+        }
 
-        if (target.closest(".delete-btn")) {
-            course.classList.add("deleting");
-        } else if (target.closest(".cancel-delete-btn")) {
-            course.classList.remove("deleting");
-        } else if (target.closest(".confirm-delete-btn")) {
-            const isCompleted = course.parentElement.classList.contains("completed-courses");
+        // --- Export ---
+        if (clickedEl.closest("#export-data-btn")) {
+            handleExport();
+            return;
+        }
+
+        // --- Import ---
+        if (clickedEl.closest("#import-data-btn")) {
+            chrome.tabs.create({ url: chrome.runtime.getURL("src/pages/import/import.html") });
+            menuDropdown.classList.remove("open");
+            return;
+        }
+
+        // --- Close dropdown on any outside click ---
+        if (!isInsideDropdown) {
+            menuDropdown.classList.remove("open");
+        }
+
+        // --- Section collapse/expand ---
+        const sectionHeader = clickedEl.closest(".courses-summary");
+        if (sectionHeader) {
+            const coursesList = sectionHeader.nextElementSibling;
+            const chevron = sectionHeader.querySelector("svg");
+            if (coursesList) coursesList.classList.toggle("hide");
+            if (chevron) chevron.classList.toggle("rotate");
+            return;
+        }
+
+        // --- Course card actions ---
+        const courseCard = clickedEl.closest(".course");
+        if (!courseCard) return;
+
+        if (clickedEl.closest(".delete-btn")) {
+            courseCard.classList.add("deleting");
+        } else if (clickedEl.closest(".cancel-delete-btn")) {
+            courseCard.classList.remove("deleting");
+        } else if (clickedEl.closest(".confirm-delete-btn")) {
+            const isCompleted = courseCard.parentElement.classList.contains("completed-courses");
 
             if (isCompleted) {
                 completedCoursesCount--;
@@ -248,11 +280,32 @@ function addClickListeners() {
             }
             updateCoursesCount();
 
-            removeFromStorage(course.dataset.courseId);
-            course.classList.add("fading-out");
-            course.addEventListener("transitionend", () => course.remove(), {
+            removeFromStorage(courseCard.dataset.courseId);
+            courseCard.classList.add("fading-out");
+            courseCard.addEventListener("transitionend", () => courseCard.remove(), {
                 once: true,
             });
         }
     });
+}
+
+async function handleExport() {
+    const EXPORT_VERSION = 1;
+    const storageData = await getFromStorage(null);
+
+    const exportData = {
+        version: EXPORT_VERSION,
+        exportedAt: new Date().toISOString(),
+        data: storageData,
+    };
+
+    const json = JSON.stringify(exportData, null, 2);
+
+    chrome.runtime.sendMessage({
+        type: "exportData",
+        json,
+        filename: `trackmycourse-backup-${new Date().toISOString().slice(0, 10)}.json`,
+    });
+
+    document.getElementById("kebab-dropdown").classList.remove("open");
 }
