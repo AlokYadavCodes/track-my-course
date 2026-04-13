@@ -16,12 +16,13 @@
     --delete-bg: #fee2e2;
     --delete-bg-hover: #fecaca;
     --delete-text: #b91c1c;
-    --delete-icon-bg-hover: #f3f4f6;
+    --delete-icon-bg-hover: #e4e4e4;
     --scroll-background: #e5e7eb;
     --scroll-thumb-color: #3b83f6c5;
     --scroll-hover: #e0e0e0c0;
     --slider-bg: #ccc;
     --slider-checked-bg: #2196f3;
+    --github-color: #444444;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +44,7 @@
         --scroll-hover: #596069;
         --slider-bg: #4b5563;
         --slider-checked-bg: #60a5fa;
+        --github-color: #dddddd;
     }
 }
 html {
@@ -508,10 +510,29 @@ input:checked + .slider:before {
     text-decoration: underline;
 }
 
+/* GitHub Link */
+.github-link {
+    color: var(--github-color);
+    border-radius: 50%;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.github-link:hover {
+    color: var(--text-primary);
+    background-color: var(--delete-icon-bg-hover);
+}
+
 /* Kebab Menu */
 .kebab-menu-container {
     position: relative;
-    margin-left: 0.75rem;
+    margin-left: 0.25rem;
 }
 
 .kebab-dropdown-divider {
