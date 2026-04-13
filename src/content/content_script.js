@@ -1,6 +1,6 @@
 const SELECTORS = {
     ytNavigationProgress: "yt-page-navigation-progress",
-    videoDuration: ".yt-badge-shape__text",
+    videoDuration: ".ytBadgeShapeText",
 
     watchPage: {
         playlistItems: "#playlist:not([hidden]) #items",
