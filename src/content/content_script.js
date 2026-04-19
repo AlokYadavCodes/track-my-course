@@ -1555,17 +1555,49 @@ async function getMoreVideos({ signal }) {
 async function isYtCourse({ signal }) {
     const performCheck = () => {
         const courseTextEl = document.querySelectorAll(SELECTORS.playlistPage.courseTextEl);
+        const courseTextInMultipleLang = [
+            "Course",
+            "कोर्स",
+            "Curso",
+            "Курс",
+            "دورة تدريبية",
+            "Kursus",
+            "Cours",
+            "コース",
+            "课程",
+        ];
+
         for (const el of courseTextEl) {
-            if (el?.textContent.toLowerCase() === "course") {
+            if (courseTextInMultipleLang.includes(el?.textContent)) {
                 return { found: true, isCourse: true };
             }
         }
 
         const playlistTextEl = document.querySelectorAll(SELECTORS.playlistPage.playlistTextEl);
+        const playlistTextInMultipleLang = [
+            "Playlist",
+            "प्लेलिस्ट",
+            "Lista de reproducción",
+            "Плейлист",
+            "قائمة تشغيل",
+            "Senarai main",
+            "Liste de lecture",
+            "再生リスト",
+            "播放列表",
+        ];
+        const podcastTextInMultipleLang = [
+            "Podcast",
+            "पॉडकास्ट",
+            "Подкаст",
+            "بودكاست",
+            "Audio siar",
+            "ポッドキャスト",
+            "播客",
+        ];
         for (const el of playlistTextEl) {
             if (
-                el?.textContent.toLowerCase() === "playlist" ||
-                el?.textContent.toLowerCase() === "podcast"
+                playlistTextInMultipleLang.includes(el?.textContent) ||
+                podcastTextInMultipleLang.includes(el?.textContent)
             ) {
                 return { found: true, isCourse: false };
             }
