@@ -113,13 +113,10 @@ if (state.currentPage !== null) handleFullPageUpdate();
 // Handles a full page update: aborts old tasks, cleans the UI, and calls the main update function for the given page type.
 async function handleFullPageUpdate(pageType = state.currentPage) {
     try {
-        if (state.activePageUpdateController) {
-            state.activePageUpdateController.abort();
-        }
+        performCleanUp();
         state.activePageUpdateController = new AbortController();
         const { signal } = state.activePageUpdateController;
 
-        performCleanUp();
         if (pageType === PAGE_TYPE.WATCH || pageType === PAGE_TYPE.PLAYLIST)
             await updateStateVariables({ signal });
         if (pageType === PAGE_TYPE.WATCH) toggleFocusModeUI(state.focusMode);
@@ -1229,6 +1226,9 @@ function removeHomeCoursesSection() {
 }
 
 function performCleanUp() {
+    if (state.activePageUpdateController) {
+        state.activePageUpdateController.abort();
+    }
     removeStartCourseBtn();
     removeVideoCheckboxes();
     removeProgressDiv();
