@@ -1,21 +1,31 @@
 const fs = require("fs-extra");
 const path = require("path");
 
-// Get target browser from env variable, or build both if not set
-const target = process.env.TARGET_BROWSER; // "chrome" or "firefox"
-const browsers = target ? [target] : ["chrome", "firefox"];
+const browsers = ["chrome", "firefox"];
+
+const staticSrcDirs = ["background", "content", "pages", "shared", "styles"];
 
 browsers.forEach((browser) => {
     const distPath = path.join("dist", browser);
+    const distSrcPath = path.join(distPath, "src");
 
-    // 1. Clean destination folder
+    // clean destination folder
     fs.emptyDirSync(distPath);
 
-    // 2. Copy required directories
-    fs.copySync("src", path.join(distPath, "src"));
+    // copy static src directories
+    staticSrcDirs.forEach((dir) => {
+        fs.copySync(path.join("src", dir), path.join(distSrcPath, dir));
+    });
+
+    // copy popup directory's dist files
+    const popupDistSrc = path.join("src", "popup", "dist");
+    const popupDistDest = path.join(distSrcPath, "popup");
+    fs.copySync(popupDistSrc, popupDistDest);
+
+    // copy icons directory
     fs.copySync("icons", path.join(distPath, "icons"));
 
-    // 3. Copy the correct manifest
+    // copy the correct manifest
     const manifestSrc = path.join("manifests", `manifest.${browser}.json`);
     const manifestDest = path.join(distPath, "manifest.json");
     fs.copyFileSync(manifestSrc, manifestDest);
