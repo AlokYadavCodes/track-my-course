@@ -653,12 +653,10 @@ async function renderWPProgressDiv({ signal }) {
     const totalTime = document.createElement("div");
     totalTime.id = "total-time";
     totalTime.textContent = `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
-    
-    const remainingTime = document.createElement("div");
-    remainingTime.id = "remaining-time";
-    remainingTime.innerHTML = `<b>Left:</b> ${getRemainingDurationStr()}`;
 
-    timeContainer.append(watchedTime, completedVideos, totalTime, remainingTime);
+    // Append to time container
+    timeContainer.append(watchedTime, completedVideos, totalTime);
+
     // Progress bar
     const progressBarOuter = document.createElement("div");
     progressBarOuter.className = "progress-bar-outer-container";
@@ -816,6 +814,16 @@ async function renderPPProgressDiv({ signal }) {
     watchedSvg.setAttribute("stroke-width", "2");
     watchedSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle>
                             <path d="M8.5 12.5L11 15l5-5.5" stroke-linecap="round" stroke-linejoin="round"></path>`;
+
+    const watchedText = document.createElement("span");
+    watchedText.className = "tmc-watched-text";
+    const watchedCount = Object.values(state.videoWatchStatus).filter(Boolean).length;
+    const totalCount = Object.keys(state.videoWatchStatus).length;
+    watchedText.textContent = `${watchedCount} / ${totalCount} watched`;
+
+    watchedDiv.append(watchedSvg, watchedText);
+
+    // Remaining
     const remainingDiv = document.createElement("div");
     remainingDiv.className = "tmc-remaining";
 
@@ -833,14 +841,7 @@ async function renderPPProgressDiv({ signal }) {
     remainingText.textContent = `Left: ${getRemainingDurationStr()}`;
     remainingDiv.append(remainingSvg, remainingText);
 
-    const watchedText = document.createElement("span");
-    watchedText.className = "tmc-watched-text";
-    const watchedCount = Object.values(state.videoWatchStatus).filter(Boolean).length;
-    const totalCount = Object.keys(state.videoWatchStatus).length;
-    watchedText.textContent = `${watchedCount} / ${totalCount} watched`;
-
-    watchedDiv.append(watchedSvg, watchedText);
-
+    // Actions (Refresh & Delete)
     const actionsDiv = document.createElement("div");
     actionsDiv.className = "tmc-actions";
 
@@ -1022,10 +1023,6 @@ function refreshWatchPageUI({ signal }) {
         `${state.watchedDuration.hours}h ${state.watchedDuration.minutes}m ${state.watchedDuration.seconds}s`;
     progressDiv.querySelector("#total-time").textContent =
         `${state.totalDuration.hours}h ${state.totalDuration.minutes}m ${state.totalDuration.seconds}s`;
-    const remainingTimeEl = progressDiv.querySelector("#remaining-time");
-    if (remainingTimeEl) {
-        remainingTimeEl.innerHTML = `<b>Left:</b> ${getRemainingDurationStr()}`;
-    }
     progressDiv.querySelector("#invested-time").textContent =
         `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
 
@@ -1062,11 +1059,10 @@ function refreshPlaylistPageUI({ signal }) {
         Object.values(state.videoWatchStatus).filter(Boolean).length
     } / ${Object.keys(state.videoWatchStatus).length} watched`;
 
+    progressDiv.querySelector(".tmc-remaining-text").textContent =
+        `Left: ${getRemainingDurationStr()}`;
+
     updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
-    const remainingTextEl = progressDiv.querySelector(".tmc-remaining-text");
-    if (remainingTextEl) {
-        remainingTextEl.textContent = `Left: ${getRemainingDurationStr()}`;
-    }
 }
 
 function updateVideoCheckboxes(page) {
@@ -2037,7 +2033,7 @@ async function updateHomeCoursesContent({ signal } = {}) {
 function getRemainingDurationStr() {
     const totalSec = durationToSeconds(state.totalDuration);
     const watchedSec = durationToSeconds(state.watchedDuration);
-    const remainingSec = Math.max(0, totalSec - watchedSec); 
+    const remainingSec = Math.max(0, totalSec - watchedSec);
     const rem = secondsToDuration(remainingSec);
     return `${rem.hours}h ${rem.minutes}m ${rem.seconds}s`;
 }
