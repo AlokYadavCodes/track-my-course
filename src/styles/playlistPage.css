@@ -53,6 +53,14 @@
     padding: 6px 12px;
     border-radius: 8px;
 }
+.tmc-pp-progress-div .tmc-remaining {
+    display: flex;
+    flex-basis: 100%;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    height: 20px;
+}
 .tmc-pp-progress-div .tmc-actions {
     border-radius: 8px 0px 8px 0;
     border-width: 1px 0px 0px 1px;

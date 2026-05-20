@@ -823,6 +823,25 @@ async function renderPPProgressDiv({ signal }) {
 
     watchedDiv.append(watchedSvg, watchedText);
 
+    // Remaining
+    const remainingDiv = document.createElement("div");
+    remainingDiv.className = "tmc-remaining";
+
+    const remainingSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    remainingSvg.setAttribute("width", "16");
+    remainingSvg.setAttribute("height", "16");
+    remainingSvg.setAttribute("viewBox", "0 0 24 24");
+    remainingSvg.setAttribute("fill", "none");
+    remainingSvg.setAttribute("stroke", "currentColor");
+    remainingSvg.setAttribute("stroke-width", "2");
+    remainingSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>`;
+
+    const remainingText = document.createElement("span");
+    remainingText.className = "tmc-remaining-text";
+    remainingText.textContent = `Left: ${getRemainingDurationStr()}`;
+    remainingDiv.append(remainingSvg, remainingText);
+
+    // Actions (Refresh & Delete)
     const actionsDiv = document.createElement("div");
     actionsDiv.className = "tmc-actions";
 
@@ -843,7 +862,7 @@ async function renderPPProgressDiv({ signal }) {
     </svg>`;
 
     actionsDiv.append(refreshDiv, deleteDiv);
-    wrapper.append(totalDiv, durationDiv, watchedDiv, actionsDiv);
+    wrapper.append(totalDiv, durationDiv, watchedDiv, remainingDiv, actionsDiv);
 
     // Delete popup
     const deletePopup = document.createElement("div");
@@ -1039,6 +1058,9 @@ function refreshPlaylistPageUI({ signal }) {
     progressDiv.querySelector(".tmc-watched-text").textContent = `${
         Object.values(state.videoWatchStatus).filter(Boolean).length
     } / ${Object.keys(state.videoWatchStatus).length} watched`;
+
+    progressDiv.querySelector(".tmc-remaining-text").textContent =
+        `Left: ${getRemainingDurationStr()}`;
 
     updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
 }
@@ -2007,4 +2029,11 @@ async function updateHomeCoursesContent({ signal } = {}) {
     for (const course of courses) {
         homeCoursesScroller.append(createCourseCard(course));
     }
+}
+function getRemainingDurationStr() {
+    const totalSec = durationToSeconds(state.totalDuration);
+    const watchedSec = durationToSeconds(state.watchedDuration);
+    const remainingSec = Math.max(0, totalSec - watchedSec);
+    const rem = secondsToDuration(remainingSec);
+    return `${rem.hours}h ${rem.minutes}m ${rem.seconds}s`;
 }
