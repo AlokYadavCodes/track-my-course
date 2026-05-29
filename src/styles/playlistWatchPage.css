@@ -31,6 +31,10 @@
     --course-panel-border: rgba(0, 0, 0, 0.1);
     --course-item-bg: rgba(0, 0, 0, 0.05);
     --course-item-hover-bg: rgba(0, 0, 0, 0.1);
+
+    --video-action-btn-bg: #0000000d;
+    --video-action-btn-text: #0f0f0f;
+    --video-action-btn-hover-bg: #0000001a;
 }
 
 html[dark] {
@@ -66,6 +70,10 @@ html[dark] {
     --course-panel-border: rgba(255, 255, 255, 0.2);
     --course-item-bg: rgba(255, 255, 255, 0.1);
     --course-item-hover-bg: rgba(255, 255, 255, 0.2);
+
+    --video-action-btn-bg: #ffffff1a;
+    --video-action-btn-text: #f1f1f1;
+    --video-action-btn-hover-bg: #ffffff33;
 }
 
 .tmc-wp-start-course-btn {
@@ -362,10 +370,108 @@ html[dark] {
     opacity: 0.85;
 }
 
-/* single video checkbox */
-.tmc-video-watch-checkbox-wrapper {
-    display: inline-block;
-    vertical-align: middle;
-    margin-left: 12px;
-    transform: scale(0.8);
+/* watched video action button */
+.tmc-watched-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    margin: 0 8px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 18px;
+    background: var(--video-action-btn-bg);
+    color: var(--video-action-btn-text);
+    font-family: "Roboto", "Arial", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+    position: relative;
+    line-height: 1;
+    user-select: none;
+}
+
+.tmc-watched-btn:hover,
+.tmc-watched-btn:active {
+    background: var(--video-action-btn-hover-bg);
+}
+
+/* Default: outlined circle visible, filled circle hidden */
+.tmc-circle-fill {
+    opacity: 0;
+}
+
+/* Watched: swap circles, change tick color to contrast filled circle */
+.tmc-watched-btn.watched .tmc-circle-outline {
+    opacity: 0;
+}
+
+.tmc-watched-btn.watched .tmc-circle-fill {
+    opacity: 1;
+}
+
+.tmc-watched-btn.watched .tmc-watched-tick {
+    stroke: #fff;
+}
+
+html[dark] .tmc-watched-btn.watched .tmc-watched-tick {
+    stroke: #0f0f0f;
+}
+
+/* Burst animation on watched button click */
+
+/* Spring bounce on the icon */
+@keyframes tmc-spring-bounce {
+    0% {
+        transform: scale(1);
+    }
+    20% {
+        transform: scale(0.85);
+    }
+    40% {
+        transform: scale(1.25);
+    }
+    60% {
+        transform: scale(0.95);
+    }
+    80% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.tmc-watched-btn--animating .tmc-watched-icon {
+    animation: tmc-spring-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tmc-spark {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    left: 28px; /* padding-left(16) + half icon(12) */
+    top: 50%;
+    pointer-events: none;
+    animation: tmc-spark-burst 0.65s ease-out forwards;
+}
+
+@keyframes tmc-spark-burst {
+    0% {
+        transform: translate(-50%, -50%) translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%)
+            translate(calc(cos(var(--angle)) * 28px), calc(sin(var(--angle)) * 28px)) scale(0);
+        opacity: 0;
+    }
 }
