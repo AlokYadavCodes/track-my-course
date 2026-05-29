@@ -1,3 +1,13 @@
+:root {
+    --tmc-toast-text: #f1f1f1;
+    --tmc-toast-bg: #0f0f0f;
+}
+
+html[dark] {
+    --tmc-toast-text: #0f0f0f;
+    --tmc-toast-bg: #f1f1f1;
+}
+
 .tmc-toast {
     box-sizing: border-box;
     padding: 0 24px;
@@ -12,8 +22,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #f1f1f1;
-    color: #000;
+    background-color: var(--tmc-toast-bg);
+    color: var(--tmc-toast-text);
 
     position: fixed;
     left: 16px;

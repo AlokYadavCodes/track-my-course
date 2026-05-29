@@ -20,6 +20,7 @@
 .tmc-pp-progress-div {
     margin-top: 10px;
     position: relative;
+    color: #f1f1f1;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     overflow: hidden;
@@ -49,7 +50,6 @@
 
     width: fit-content;
     background-color: rgba(255, 255, 255, 0.1);
-    color: #f1f1f1;
     padding: 6px 12px;
     border-radius: 8px;
 }
@@ -57,16 +57,20 @@
     display: flex;
     flex-basis: 100%;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: 14px;
-    height: 20px;
+}
+.tmc-pp-progress-div .tmc-progress-ring {
+    flex-shrink: 0;
+}
+.tmc-pp-progress-div .tmc-ring-progress {
+    transition: stroke-dashoffset 0.4s ease;
 }
 .tmc-pp-progress-div .tmc-actions {
     border-radius: 8px 0px 8px 0;
     border-width: 1px 0px 0px 1px;
     border-style: solid;
     border-color: rgba(255, 255, 255, 0.2);
-    color: #f1f1f1;
     background-color: rgba(255, 255, 255, 0.1);
     position: absolute;
     bottom: 0;
@@ -119,7 +123,6 @@
 }
 
 .tmc-pp-progress-div .tmc-delete-popup p {
-    color: #f1f1f1;
     font-size: 16px;
     text-align: center;
 }

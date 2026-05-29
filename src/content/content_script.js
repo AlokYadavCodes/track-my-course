@@ -834,22 +834,31 @@ async function renderPPProgressDiv({ signal }) {
 
     watchedDiv.append(watchedSvg, watchedText);
 
-    // Remaining
+    // Remaining (circular progress ring)
     const remainingDiv = document.createElement("div");
     remainingDiv.className = "tmc-remaining";
 
+    const percent = getProgressPercent(state);
+    const RING_RADIUS = 9;
+    const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+    const ringOffset = RING_CIRCUMFERENCE * (1 - percent / 100);
+
     const remainingSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    remainingSvg.setAttribute("width", "16");
-    remainingSvg.setAttribute("height", "16");
+    remainingSvg.setAttribute("width", "20");
+    remainingSvg.setAttribute("height", "20");
     remainingSvg.setAttribute("viewBox", "0 0 24 24");
     remainingSvg.setAttribute("fill", "none");
-    remainingSvg.setAttribute("stroke", "currentColor");
-    remainingSvg.setAttribute("stroke-width", "2");
-    remainingSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>`;
+    remainingSvg.classList.add("tmc-progress-ring");
+
+    remainingSvg.innerHTML = `
+        <circle cx="12" cy="12" r="${RING_RADIUS}" stroke="currentColor" stroke-width="2.5" opacity="0.2"></circle>
+        <circle class="tmc-ring-progress" cx="12" cy="12" r="${RING_RADIUS}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-dasharray="${RING_CIRCUMFERENCE}" stroke-dashoffset="${ringOffset}"
+            transform="rotate(-90 12 12)"></circle>`;
 
     const remainingText = document.createElement("span");
     remainingText.className = "tmc-remaining-text";
-    remainingText.textContent = `Left: ${getRemainingDurationStr()}`;
+    remainingText.textContent = `${percent}% · ${getRemainingDurationStr()} left`;
     remainingDiv.append(remainingSvg, remainingText);
 
     // Actions (Refresh & Delete)
@@ -942,7 +951,8 @@ async function renderVideoCourseMatches({ signal } = {}) {
         removeVideoCourseList();
         return;
     }
-    if (!signal) {
+    const hasExternalSignal = !!signal;
+    if (!hasExternalSignal) {
         if (state.activePageUpdateController) {
             state.activePageUpdateController.abort();
         }
@@ -950,12 +960,19 @@ async function renderVideoCourseMatches({ signal } = {}) {
         signal = state.activePageUpdateController.signal;
     }
 
-    if (isCurrentPlaylistTracked) {
-        matchedCourses = matchedCourses.filter(
-            (c) => c.playlistId !== getPlaylistId(window.location.href)
-        );
+    try {
+        if (isCurrentPlaylistTracked) {
+            matchedCourses = matchedCourses.filter(
+                (c) => c.playlistId !== getPlaylistId(window.location.href)
+            );
+        }
+        await renderVideoCourseList({ signal, courses: matchedCourses });
+    } catch (err) {
+        if (err.name === "AbortError" && !hasExternalSignal) {
+            return;
+        }
+        throw err;
     }
-    renderVideoCourseList({ signal, courses: matchedCourses });
 }
 
 async function renderPlaylistScanning({ signal }) {
@@ -1065,8 +1082,18 @@ function refreshPlaylistPageUI({ signal }) {
         Object.values(state.videoWatchStatus).filter(Boolean).length
     } / ${Object.keys(state.videoWatchStatus).length} watched`;
 
+    const percent = getProgressPercent(state);
+    const RING_RADIUS = 9;
+    const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+    const ringOffset = RING_CIRCUMFERENCE * (1 - percent / 100);
+
+    const ringProgress = progressDiv.querySelector(".tmc-ring-progress");
+    if (ringProgress) {
+        ringProgress.setAttribute("stroke-dashoffset", ringOffset);
+    }
+
     progressDiv.querySelector(".tmc-remaining-text").textContent =
-        `Left: ${getRemainingDurationStr()}`;
+        `${percent}% · ${getRemainingDurationStr()} left`;
 
     updateVideoCheckboxes(PAGE_TYPE.PLAYLIST);
 }
@@ -1879,107 +1906,116 @@ async function renderVideoWatchedButton({ signal } = {}) {
     }
 
     const isWatched = matchedCourses.some((c) => c.isWatched);
-    if (!signal) {
+    const hasExternalSignal = !!signal;
+    if (!hasExternalSignal) {
         if (state.activePageUpdateController) {
             state.activePageUpdateController.abort();
         }
         state.activePageUpdateController = new AbortController();
         signal = state.activePageUpdateController.signal;
     }
-    // waitForNavigation is required because YT asynchronously changes the title, like, etc.
-    // As navigation happens instantly, button is added, but it get's removed within seconds when youtube updates the DOM
-    // we can rely on navigation bar as it is completed after DOM is updated.
-    await waitForNavigation();
-    const ytVideoActionDiv = await waitForElement({
-        selector: "ytd-watch-metadata #top-level-buttons-computed",
-        signal,
-    });
-    if (signal?.aborted) return;
-    // update if already present with latest state (in case of storage.onChanged)
-    let watchedBtn = document.querySelector(".tmc-watched-btn");
-    if (watchedBtn) {
-        watchedBtn.classList.toggle("watched", isWatched);
-        return;
-    }
 
-    watchedBtn = document.createElement("button");
-    watchedBtn.className = `tmc-watched-btn ${isWatched ? " watched" : ""}`;
-
-    watchedBtn.innerHTML = `
-            <svg class="tmc-watched-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
-                <circle class="tmc-circle-outline" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle class="tmc-circle-fill" cx="12" cy="12" r="11" fill="currentColor"/>
-                <path class="tmc-watched-tick" d="M8.5 12.5L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        `;
-
-    const label = document.createElement("span");
-    label.className = "tmc-watched-label";
-    label.textContent = "Watched";
-
-    watchedBtn.appendChild(label);
-
-    // Toggle watched state and sync across all tracked courses
-    watchedBtn.addEventListener("click", async () => {
-        // the below line alone is not sufficient to get the video duration, and we might need an early return.
-        // it is not reliable as when ad is playing, it returns the ad's duration (not the video's duration)
-        // and we are not storing the video duratin in storage, so we have to wait for the user to skip the ad.
-
-        // const videoDurationEl = document.querySelector(".ytp-time-duration");
-        // const videoDuration = videoDurationEl.textContent;
-
-        // We will notify the user to skip the add before clicking the watched button (as we are nowhere storing the video duration in storage)
-        const player = document.querySelector("#movie_player");
-        const isAdShowing = player?.classList.contains("ad-showing");
-        if (isAdShowing) {
-            showToast("Cannot mark as watched while an ad is playing.");
+    try {
+        // waitForNavigation is required because YT asynchronously changes the title, like, etc.
+        // As navigation happens instantly, button is added, but it get's removed within seconds when youtube updates the DOM
+        // we can rely on navigation bar as it is completed after DOM is updated.
+        await waitForNavigation();
+        const ytVideoActionDiv = await waitForElement({
+            selector: "ytd-watch-metadata #top-level-buttons-computed",
+            signal,
+        });
+        if (signal?.aborted) return;
+        // update if already present with latest state (in case of storage.onChanged)
+        let watchedBtn = document.querySelector(".tmc-watched-btn");
+        if (watchedBtn) {
+            watchedBtn.classList.toggle("watched", isWatched);
             return;
         }
 
-        // now proceeding with actual logic
+        watchedBtn = document.createElement("button");
+        watchedBtn.className = `tmc-watched-btn ${isWatched ? " watched" : ""}`;
 
-        const isWatched = watchedBtn.classList.toggle("watched");
+        watchedBtn.innerHTML = `
+                <svg class="tmc-watched-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+                    <circle class="tmc-circle-outline" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle class="tmc-circle-fill" cx="12" cy="12" r="11" fill="currentColor"/>
+                    <path class="tmc-watched-tick" d="M8.5 12.5L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
 
-        // Burst animation when marking as watched
-        if (isWatched) {
-            watchedBtn.classList.add("tmc-watched-btn--animating");
+        const label = document.createElement("span");
+        label.className = "tmc-watched-label";
+        label.textContent = "Watched";
 
-            // Spawn spark particles
-            const sparkColors = [
-                "#FF6D93",
-                "#FF4878",
-                "#FFD54F",
-                "#FF6D93",
-                "#FFD54F",
-                "#FF4878",
-                "#FFD54F",
-                "#FF6D93",
-            ];
-            const sparks = sparkColors.map((color, i) => {
-                const spark = document.createElement("span");
-                spark.className = "tmc-spark";
-                const angle = (i / sparkColors.length) * 2 * Math.PI;
-                spark.style.setProperty("--angle", `${angle}rad`);
-                spark.style.backgroundColor = color;
-                watchedBtn.appendChild(spark);
-                return spark;
-            });
+        watchedBtn.appendChild(label);
 
-            // Clean up after animation
-            setTimeout(() => {
-                watchedBtn.classList.remove("tmc-watched-btn--animating");
-                sparks.forEach((s) => s.remove());
-            }, 1000);
+        // Toggle watched state and sync across all tracked courses
+        watchedBtn.addEventListener("click", async () => {
+            // the below line alone is not sufficient to get the video duration, and we might need an early return.
+            // it is not reliable as when ad is playing, it returns the ad's duration (not the video's duration)
+            // and we are not storing the video duratin in storage, so we have to wait for the user to skip the ad.
+
+            // const videoDurationEl = document.querySelector(".ytp-time-duration");
+            // const videoDuration = videoDurationEl.textContent;
+
+            // We will notify the user to skip the add before clicking the watched button (as we are nowhere storing the video duration in storage)
+            const player = document.querySelector("#movie_player");
+            const isAdShowing = player?.classList.contains("ad-showing");
+            if (isAdShowing) {
+                showToast("Cannot mark as watched while an ad is playing.");
+                return;
+            }
+
+            // now proceeding with actual logic
+
+            const isWatched = watchedBtn.classList.toggle("watched");
+
+            // Burst animation when marking as watched
+            if (isWatched) {
+                watchedBtn.classList.add("tmc-watched-btn--animating");
+
+                // Spawn spark particles
+                const sparkColors = [
+                    "#FF6D93",
+                    "#FF4878",
+                    "#FFD54F",
+                    "#FF6D93",
+                    "#FFD54F",
+                    "#FF4878",
+                    "#FFD54F",
+                    "#FF6D93",
+                ];
+                const sparks = sparkColors.map((color, i) => {
+                    const spark = document.createElement("span");
+                    spark.className = "tmc-spark";
+                    const angle = (i / sparkColors.length) * 2 * Math.PI;
+                    spark.style.setProperty("--angle", `${angle}rad`);
+                    spark.style.backgroundColor = color;
+                    watchedBtn.appendChild(spark);
+                    return spark;
+                });
+
+                // Clean up after animation
+                setTimeout(() => {
+                    watchedBtn.classList.remove("tmc-watched-btn--animating");
+                    sparks.forEach((s) => s.remove());
+                }, 1000);
+            }
+
+            const videoDurationEl = document.querySelector(".ytp-time-duration");
+            const videoDuration = videoDurationEl.textContent;
+
+            await synchronizeVideoStatus(videoId, isWatched, videoDuration);
+        });
+
+        const likeDislikeBtn = ytVideoActionDiv.children[0];
+        likeDislikeBtn.insertAdjacentElement("afterend", watchedBtn);
+    } catch (err) {
+        if (err.name === "AbortError" && !hasExternalSignal) {
+            return;
         }
-
-        const videoDurationEl = document.querySelector(".ytp-time-duration");
-        const videoDuration = videoDurationEl.textContent;
-
-        await synchronizeVideoStatus(videoId, isWatched, videoDuration);
-    });
-
-    const likeDislikeBtn = ytVideoActionDiv.children[0];
-    likeDislikeBtn.insertAdjacentElement("afterend", watchedBtn);
+        throw err;
+    }
 }
 
 async function renderHomeCoursesSection({ signal }) {
@@ -2099,25 +2135,38 @@ function createCourseCard(course) {
 }
 
 async function updateHomeCoursesContent({ signal } = {}) {
-    if (!signal) signal = state.activePageUpdateController.signal;
-    const homeCoursesSection = document.querySelector(".tmc-home-section");
-    if (!homeCoursesSection) {
-        renderHomeCoursesSection({ signal });
-        return;
+    const hasExternalSignal = !!signal;
+    if (!hasExternalSignal) {
+        signal = state.activePageUpdateController?.signal;
     }
+    try {
+        const homeCoursesSection = document.querySelector(".tmc-home-section");
+        if (!homeCoursesSection) {
+            await renderHomeCoursesSection({ signal });
+            return;
+        }
 
-    const storageData = await getFromStorage(null);
-    const courses = getCourseEntries(storageData).map(([key, value]) => ({ ...value, id: key }));
-    if (courses.length === 0) {
-        removeHomeCoursesSection();
-        return;
-    }
+        const storageData = await getFromStorage(null);
+        const courses = getCourseEntries(storageData).map(([key, value]) => ({
+            ...value,
+            id: key,
+        }));
+        if (courses.length === 0) {
+            removeHomeCoursesSection();
+            return;
+        }
 
-    const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
-    homeCoursesScroller.innerHTML = "";
-    courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
-    for (const course of courses) {
-        homeCoursesScroller.append(createCourseCard(course));
+        const homeCoursesScroller = document.querySelector(".tmc-home-courses-scroller");
+        homeCoursesScroller.innerHTML = "";
+        courses.sort((a, b) => (b.lastInteractedAt ?? 0) - (a.lastInteractedAt ?? 0));
+        for (const course of courses) {
+            homeCoursesScroller.append(createCourseCard(course));
+        }
+    } catch (err) {
+        if (err.name === "AbortError" && !hasExternalSignal) {
+            return;
+        }
+        throw err;
     }
 }
 
@@ -2126,5 +2175,5 @@ function getRemainingDurationStr() {
     const watchedSec = durationToSeconds(state.watchedDuration);
     const remainingSec = Math.max(0, totalSec - watchedSec);
     const rem = secondsToDuration(remainingSec);
-    return `${rem.hours}h ${rem.minutes}m ${rem.seconds}s`;
+    return `${rem.hours}h ${rem.minutes}m`;
 }
