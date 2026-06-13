@@ -556,9 +556,11 @@ function setupCheckbox({ video, pageType, signal }) {
     }
     const checkboxWrapper = getCheckboxWrapper(pageType);
     const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
-    const url = video.querySelector(
-        `${pageType === PAGE_TYPE.PLAYLIST ? SELECTORS.playlistPage.playlistVideoLink : "#wc-endpoint"}`
-    )?.href;
+    const titleEl = video.querySelector(SELECTORS.playlistPage.playlistVideoLink);
+    if (pageType === PAGE_TYPE.PLAYLIST) titleEl.style.setProperty("padding-right", "64px");
+    const url =
+        pageType === PAGE_TYPE.PLAYLIST ? titleEl?.href : video.querySelector("#wc-endpoint")?.href;
+
     if (!url) return;
     const videoId = getVideoId(url);
     if (!videoId) return;
