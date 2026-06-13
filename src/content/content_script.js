@@ -16,7 +16,11 @@ const SELECTORS = {
         startCourseBtnWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         startCourseBtnSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
-        contentDiv: "#contents:has(>ytd-playlist-video-renderer)",
+        contentDiv: "#contents:has(> div > yt-lockup-view-model)",
+        playlistVideo: "yt-lockup-view-model",
+        playlistVideoLink: ".ytLockupMetadataViewModelTitle",
+        playlistVideoMenu: ".ytLockupMetadataViewModelMenuButton",
+        playlistContinuation: "yt-continuation-item-view-model",
         progressDivWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         progressDivSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
@@ -500,7 +504,7 @@ async function renderPPVideoCheckboxes({ signal }) {
     let playlistVideos = contentDiv.children;
     if (signal.aborted) throw createAbortError();
     for (const video of playlistVideos) {
-        if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
+        if (getPPVideoEl(video)) {
             setupCheckbox({ video, pageType: PAGE_TYPE.PLAYLIST, signal });
         } else {
             const config = { childList: true };
@@ -513,7 +517,7 @@ async function renderPPVideoCheckboxes({ signal }) {
                     }
                 }
                 for (const video of playlistVideos) {
-                    if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
+                    if (getPPVideoEl(video)) {
                         setupCheckbox({ video, pageType: PAGE_TYPE.PLAYLIST, signal });
                     } else {
                         observer.observe(contentDiv, config);
@@ -532,6 +536,20 @@ async function renderPPVideoCheckboxes({ signal }) {
     }
 }
 
+function getPPVideoEl(video) {
+    if (video.tagName?.toLowerCase() === SELECTORS.playlistPage.playlistVideo) {
+        return video;
+    }
+    return video.querySelector?.(SELECTORS.playlistPage.playlistVideo);
+}
+
+function getPPContinuationEl(video) {
+    if (video.tagName?.toLowerCase() === SELECTORS.playlistPage.playlistContinuation) {
+        return video;
+    }
+    return video.querySelector?.(SELECTORS.playlistPage.playlistContinuation);
+}
+
 function setupCheckbox({ video, pageType, signal }) {
     if (pageType !== PAGE_TYPE.PLAYLIST && pageType !== PAGE_TYPE.WATCH) {
         throw new Error("Invalid page type for checkbox setup");
@@ -539,28 +557,40 @@ function setupCheckbox({ video, pageType, signal }) {
     const checkboxWrapper = getCheckboxWrapper(pageType);
     const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
     const url = video.querySelector(
-        `${pageType === PAGE_TYPE.PLAYLIST ? "#video-title" : "#wc-endpoint"}`
-    ).href;
+        `${pageType === PAGE_TYPE.PLAYLIST ? SELECTORS.playlistPage.playlistVideoLink : "#wc-endpoint"}`
+    )?.href;
+    if (!url) return;
     const videoId = getVideoId(url);
+    if (!videoId) return;
     checkbox.id = videoId;
     checkbox.checked = state.videoWatchStatus[videoId] ?? false;
 
     checkbox.addEventListener("click", async (e) => {
-        const isChecked = e.target.checked;
-        let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
-        if (!videoDuration) {
-            videoDuration = (
-                await waitForElement({
-                    selector: SELECTORS.videoDuration,
-                    parentEl: video,
-                    signal,
-                })
-            ).textContent;
+        try {
+            e.stopPropagation();
+            const isChecked = e.target.checked;
+            let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
+            if (!videoDuration) {
+                videoDuration = (
+                    await waitForElement({
+                        selector: SELECTORS.videoDuration,
+                        parentEl: video,
+                        signal: state.activePageUpdateController?.signal,
+                    })
+                ).textContent;
+            }
+            await synchronizeVideoStatus(videoId, isChecked, videoDuration);
+        } catch (err) {
+            if (err.name !== "AbortError") {
+                console.error("Unexpected error during checkbox update:", err);
+            }
         }
-        await synchronizeVideoStatus(videoId, isChecked, videoDuration);
     });
 
-    const menu = video.querySelector("#menu");
+    const menu = video.querySelector(
+        `${pageType === PAGE_TYPE.PLAYLIST ? SELECTORS.playlistPage.playlistVideoMenu : "#menu"}`
+    );
+    if (!menu) return;
     menu.append(checkboxWrapper);
 }
 
@@ -982,6 +1012,7 @@ async function renderPlaylistScanning({ signal }) {
         selector: SELECTORS.playlistPage.contentDiv,
         signal,
     });
+    contentDiv.style.setProperty("position", "relative");
 
     const scanningPlaylistEl = document.createElement("div");
     scanningPlaylistEl.className = "tmc-scanning-playlist";
@@ -1384,6 +1415,10 @@ function waitForElement({ selector, signal, parentEl = document.body }) {
 }
 
 async function imgSrcToBase64(imgSrc) {
+    if (!imgSrc) {
+        throw new Error("Could not load the image: missing image source.");
+    }
+
     return new Promise((resolve, reject) => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -1403,10 +1438,15 @@ async function imgSrcToBase64(imgSrc) {
         };
 
         image.onerror = () => {
-            reject(new Error("Could not load the image."));
+            reject(new Error(`Could not load the image: ${imgSrc}`));
         };
         image.src = imgSrc;
     });
+}
+
+function getPlaylistImageSrc() {
+    const imageEl = document.querySelector(`${SELECTORS.playlistPage.contentDiv} img`);
+    return imageEl?.src;
 }
 
 function addDurationTo(duration, target /* "watched" | "total" */) {
@@ -1479,6 +1519,7 @@ async function updatePlaylistData() {
     let isThereMoreVideos = true;
     let isScanning = false;
     let videoWatchStatus = {};
+    const processedVideoIds = new Set();
     let playlistVideos = contentDiv.children;
     // TODO: if length is 0, it never reaches here. It keeps waiting for contentDiv indefinitely (above) because of contentDiv selector having :has() and it's empty
     // so it will not update when playlist is empty. Needs to be fixed.
@@ -1489,10 +1530,18 @@ async function updatePlaylistData() {
     const html = document.querySelector("html");
     const originalScroll = html.scrollTop;
 
+    const playlistImageSrc = getPlaylistImageSrc();
     while (isThereMoreVideos) {
         isThereMoreVideos = false;
         for (const video of playlistVideos) {
-            if (video.tagName.toLowerCase() === "ytd-playlist-video-renderer") {
+            if (getPPVideoEl(video)) {
+                const url = video.querySelector(SELECTORS.playlistPage.playlistVideoLink)?.href;
+                if (!url) continue;
+                const videoId = getVideoId(url);
+                if (!videoId) continue;
+                if (processedVideoIds.has(videoId)) continue;
+                processedVideoIds.add(videoId);
+
                 let videoDuration = video.querySelector(SELECTORS.videoDuration)?.textContent;
                 if (!videoDuration) {
                     videoDuration = (
@@ -1504,8 +1553,6 @@ async function updatePlaylistData() {
                     ).textContent;
                 }
                 addDurationTo(videoDuration, "total");
-                const url = video.querySelector("#video-title").href;
-                const videoId = getVideoId(url);
                 videoWatchStatus[videoId] = state.videoWatchStatus[videoId] ?? false;
                 if (videoWatchStatus[videoId] === true) {
                     addDurationTo(videoDuration, "watched");
@@ -1513,21 +1560,19 @@ async function updatePlaylistData() {
                 const scannedVideoCountEl = document.querySelector("#scanned-videos-count");
                 if (scannedVideoCountEl)
                     scannedVideoCountEl.textContent = Object.keys(videoWatchStatus).length;
-            } else if (video.tagName.toLowerCase() === "ytd-continuation-item-renderer") {
+            } else if (getPPContinuationEl(video)) {
                 if (!isScanning) renderPlaylistScanning({ signal });
                 isScanning = true;
                 isThereMoreVideos = true;
-                waitForDuration = true;
+                const moreVideosPromise = getMoreVideos({ signal });
                 html.scrollBy({
                     top: 10000000,
                     left: 0,
                     behavior: "smooth",
                 });
 
-                playlistVideos = await getMoreVideos({
-                    originalScroll,
-                    signal,
-                });
+                await moreVideosPromise;
+                playlistVideos = contentDiv.children;
 
                 break;
             }
@@ -1538,9 +1583,6 @@ async function updatePlaylistData() {
 
     state.videoWatchStatus = videoWatchStatus;
     state.lastInteractedAt = Date.now();
-    const playlistImageSrc = document.querySelector(
-        "#contents:has(>ytd-playlist-video-renderer) img"
-    )?.src;
     state.courseImgSrc = await imgSrcToBase64(playlistImageSrc);
     if (state.isYtCourse) {
         state.courseName = document.querySelector(
@@ -1578,37 +1620,55 @@ function saveCourseState() {
 async function getMoreVideos({ signal }) {
     if (signal?.aborted) return Promise.reject(createAbortError());
 
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
+        let observer;
+
+        const cleanup = () => {
+            clearTimeout(timeout);
+            signal?.removeEventListener("abort", abortListener);
+            observer?.disconnect();
+        };
+
         const timeout = setTimeout(() => {
-            observer.disconnect();
+            cleanup();
             reject(createAbortError());
         }, 60000);
 
         // Handle abortion signal
         const abortListener = () => {
-            clearTimeout(timeout);
-            observer.disconnect();
+            cleanup();
             reject(createAbortError());
         };
         signal.addEventListener("abort", abortListener, { once: true });
-        const contentDiv = await waitForElement({
-            selector: SELECTORS.playlistPage.contentDiv,
-            signal,
-        });
 
-        const callback = (mutationList, obs) => {
+        const contentDiv = document.querySelector(SELECTORS.playlistPage.contentDiv);
+        if (!contentDiv) {
+            cleanup();
+            reject(createAbortError());
+            return;
+        }
+
+        const callback = (mutationList) => {
+            const playlistNodes = [];
+
             for (const mutation of mutationList) {
                 if (mutation.addedNodes.length > 0) {
-                    clearTimeout(timeout);
-                    signal?.removeEventListener("abort", abortListener);
-                    observer.disconnect();
-                    resolve(mutation.addedNodes);
+                    for (const node of mutation.addedNodes) {
+                        if (getPPVideoEl(node) || getPPContinuationEl(node)) {
+                            playlistNodes.push(node);
+                        }
+                    }
                 }
+            }
+
+            if (playlistNodes.some((node) => getPPVideoEl(node))) {
+                cleanup();
+                resolve();
             }
         };
 
-        const observer = new MutationObserver(callback);
-        observer.observe(contentDiv, { childList: true });
+        observer = new MutationObserver(callback);
+        observer.observe(contentDiv, { childList: true, subtree: true });
     });
 }
 

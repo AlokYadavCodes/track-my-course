@@ -191,15 +191,15 @@
 }
 
 .tmc-pp-checkbox-wrapper {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
 }
 
 /* youtube elements styling */
 ytd-item-section-renderer.style-scope.ytd-section-list-renderer #contents {
     position: relative;
 }
-#menu.style-scope.ytd-playlist-video-renderer {
+.ytLockupMetadataViewModelMenuButton {
     display: flex;
     justify-content: center;
     align-items: center;
