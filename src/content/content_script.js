@@ -16,16 +16,25 @@ const SELECTORS = {
         startCourseBtnWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         startCourseBtnSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
-        contentDiv: "#contents:has(> div > yt-lockup-view-model)",
+        contentDiv: "ytd-browse #contents:has(yt-lockup-view-model)",
         playlistVideo: "yt-lockup-view-model",
         playlistVideoLink: ".ytLockupMetadataViewModelTitle",
         playlistVideoMenu: ".ytLockupMetadataViewModelMenuButton",
         playlistContinuation: "yt-continuation-item-view-model",
+
+        // Own/user-created playlist selectors (renderer layout)
+        ownPlaylist: {
+            contentDiv: "ytd-browse #contents:has(>ytd-playlist-video-renderer)",
+            playlistVideo: "ytd-playlist-video-renderer",
+            playlistVideoLink: "#video-title",
+            playlistVideoMenu: "#menu",
+            playlistContinuation: "ytd-continuation-item-renderer",
+        },
         progressDivWideScreenRefEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo:has(yt-description-preview-view-model)",
         progressDivSmallScreenRefEl: "ytd-tabbed-page-header yt-flexible-actions-view-model",
         courseTextEl: ".metadata-wrapper badge-shape",
-        playlistTextEl: ".page-header-sidebar .ytContentMetadataViewModelMetadataText",
+        playlistTextEl: ".ytContentMetadataViewModelMetadataText",
         playlistNameEl:
             "ytd-browse[page-subtype=playlist] > yt-page-header-renderer .ytPageHeaderViewModelHeadlineInfo yt-dynamic-text-view-model h1 span",
         recommendations: "ytd-watch-next-secondary-results-renderer",
@@ -58,6 +67,7 @@ const state = {
 
     currentPage: null, // set it using PAGE_TYPE
     isYtCourse: false,
+    playlistLayout: null, // set using PLAYLIST_LAYOUT
     focusMode: false,
 
     activePageUpdateController: null,
@@ -72,6 +82,75 @@ const PAGE_TYPE = {
     PLAYLIST: "playlist",
     HOME: "home",
 };
+
+const PLAYLIST_LAYOUT = {
+    LOCKUP: "lockup", // Other's Channel playlists - uses yt-lockup-view-model
+    RENDERER: "renderer", // Own/user-created playlists - uses ytd-playlist-video-renderer
+};
+
+/**
+ * Detects whether the playlist page uses the lockup layout (other's channel playlists)
+ * or the renderer layout (own/user-created playlists).
+ * Races between finding either element type in the DOM.
+ */
+async function detectPlaylistLayout({ signal }) {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) return reject(createAbortError());
+
+        // Check if elements already exist
+        if (document.querySelector(`${SELECTORS.playlistPage.contentDiv}`))
+            return resolve(PLAYLIST_LAYOUT.LOCKUP);
+        if (document.querySelector(`${SELECTORS.playlistPage.ownPlaylist.contentDiv}`))
+            return resolve(PLAYLIST_LAYOUT.RENDERER);
+
+        // Neither found yet, observe for changes
+        const observer = new MutationObserver(() => {
+            if (document.querySelector("yt-lockup-view-model")) {
+                cleanup();
+                resolve(PLAYLIST_LAYOUT.LOCKUP);
+            } else if (document.querySelector("ytd-playlist-video-renderer")) {
+                cleanup();
+                resolve(PLAYLIST_LAYOUT.RENDERER);
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        const timeoutId = setTimeout(() => {
+            cleanup();
+            // Default to lockup layout if detection times out
+            resolve(PLAYLIST_LAYOUT.LOCKUP);
+        }, 30000);
+
+        function cleanup() {
+            observer.disconnect();
+            clearTimeout(timeoutId);
+            signal?.removeEventListener("abort", abortListener);
+        }
+
+        function abortListener() {
+            cleanup();
+            reject(createAbortError());
+        }
+        signal?.addEventListener("abort", abortListener, { once: true });
+    });
+}
+
+/**
+ * Returns the appropriate content-area selectors based on the detected playlist layout.
+ */
+function getPPContentSelectors() {
+    if (state.playlistLayout === PLAYLIST_LAYOUT.RENDERER) {
+        return SELECTORS.playlistPage.ownPlaylist;
+    }
+    return {
+        contentDiv: SELECTORS.playlistPage.contentDiv,
+        playlistVideo: SELECTORS.playlistPage.playlistVideo,
+        playlistVideoLink: SELECTORS.playlistPage.playlistVideoLink,
+        playlistVideoMenu: SELECTORS.playlistPage.playlistVideoMenu,
+        playlistContinuation: SELECTORS.playlistPage.playlistContinuation,
+    };
+}
 
 async function updateStateVariables({ signal }) {
     if (signal.aborted) throw createAbortError();
@@ -200,7 +279,10 @@ async function updateWatchPage({ signal }) {
 }
 
 async function updatePlaylistPage({ signal }) {
-    state.isYtCourse = await isYtCourse({ signal });
+    state.playlistLayout = await detectPlaylistLayout({ signal });
+    // Own playlists are never YT courses; skip course detection if it is own playlist
+    state.isYtCourse =
+        state.playlistLayout === PLAYLIST_LAYOUT.RENDERER ? false : await isYtCourse({ signal });
 
     if (!state.mediaQuery) {
         state.mediaQuery = window.matchMedia("(min-width: 1080px)");
@@ -497,8 +579,10 @@ async function renderWPVideoCheckboxes({ signal }) {
 
 async function renderPPVideoCheckboxes({ signal }) {
     if (signal.aborted) throw createAbortError();
+    const sel = getPPContentSelectors();
+
     const contentDiv = await waitForElement({
-        selector: SELECTORS.playlistPage.contentDiv,
+        selector: sel.contentDiv,
         signal,
     });
     let playlistVideos = contentDiv.children;
@@ -537,17 +621,19 @@ async function renderPPVideoCheckboxes({ signal }) {
 }
 
 function getPPVideoEl(video) {
-    if (video.tagName?.toLowerCase() === SELECTORS.playlistPage.playlistVideo) {
+    const sel = getPPContentSelectors();
+    if (video.tagName?.toLowerCase() === sel.playlistVideo) {
         return video;
     }
-    return video.querySelector?.(SELECTORS.playlistPage.playlistVideo);
+    return video.querySelector?.(sel.playlistVideo);
 }
 
 function getPPContinuationEl(video) {
-    if (video.tagName?.toLowerCase() === SELECTORS.playlistPage.playlistContinuation) {
+    const sel = getPPContentSelectors();
+    if (video.tagName?.toLowerCase() === sel.playlistContinuation) {
         return video;
     }
-    return video.querySelector?.(SELECTORS.playlistPage.playlistContinuation);
+    return video.querySelector?.(sel.playlistContinuation);
 }
 
 function setupCheckbox({ video, pageType, signal }) {
@@ -556,8 +642,9 @@ function setupCheckbox({ video, pageType, signal }) {
     }
     const checkboxWrapper = getCheckboxWrapper(pageType);
     const checkbox = checkboxWrapper.querySelector("input[type=checkbox]");
-    const titleEl = video.querySelector(SELECTORS.playlistPage.playlistVideoLink);
-    if (pageType === PAGE_TYPE.PLAYLIST) titleEl.style.setProperty("padding-right", "64px");
+    const sel = getPPContentSelectors();
+    const titleEl = video.querySelector(sel.playlistVideoLink);
+    if (pageType === PAGE_TYPE.PLAYLIST) titleEl?.style.setProperty("padding-right", "64px");
     const url =
         pageType === PAGE_TYPE.PLAYLIST ? titleEl?.href : video.querySelector("#wc-endpoint")?.href;
 
@@ -590,7 +677,7 @@ function setupCheckbox({ video, pageType, signal }) {
     });
 
     const menu = video.querySelector(
-        `${pageType === PAGE_TYPE.PLAYLIST ? SELECTORS.playlistPage.playlistVideoMenu : "#menu"}`
+        `${pageType === PAGE_TYPE.PLAYLIST ? sel.playlistVideoMenu : "#menu"}`
     );
     if (!menu) return;
     menu.append(checkboxWrapper);
@@ -1010,8 +1097,9 @@ async function renderVideoCourseMatches({ signal } = {}) {
 async function renderPlaylistScanning({ signal }) {
     if (signal.aborted) throw createAbortError();
 
+    const sel = getPPContentSelectors();
     const contentDiv = await waitForElement({
-        selector: SELECTORS.playlistPage.contentDiv,
+        selector: sel.contentDiv,
         signal,
     });
     contentDiv.style.setProperty("position", "relative");
@@ -1447,7 +1535,8 @@ async function imgSrcToBase64(imgSrc) {
 }
 
 function getPlaylistImageSrc() {
-    const imageEl = document.querySelector(`${SELECTORS.playlistPage.contentDiv} img`);
+    const sel = getPPContentSelectors();
+    const imageEl = document.querySelector(`${sel.contentDiv} img`);
     return imageEl?.src;
 }
 
@@ -1514,8 +1603,9 @@ async function scanPlaylistForCourseData({ videoElements, signal }) {
 
 async function updatePlaylistData() {
     const signal = state.activePageUpdateController.signal;
+    const sel = getPPContentSelectors();
     const contentDiv = await waitForElement({
-        selector: SELECTORS.playlistPage.contentDiv,
+        selector: sel.contentDiv,
         signal,
     });
     let isThereMoreVideos = true;
@@ -1537,7 +1627,7 @@ async function updatePlaylistData() {
         isThereMoreVideos = false;
         for (const video of playlistVideos) {
             if (getPPVideoEl(video)) {
-                const url = video.querySelector(SELECTORS.playlistPage.playlistVideoLink)?.href;
+                const url = video.querySelector(sel.playlistVideoLink)?.href;
                 if (!url) continue;
                 const videoId = getVideoId(url);
                 if (!videoId) continue;
@@ -1643,7 +1733,8 @@ async function getMoreVideos({ signal }) {
         };
         signal.addEventListener("abort", abortListener, { once: true });
 
-        const contentDiv = document.querySelector(SELECTORS.playlistPage.contentDiv);
+        const sel = getPPContentSelectors();
+        const contentDiv = document.querySelector(sel.contentDiv);
         if (!contentDiv) {
             cleanup();
             reject(createAbortError());

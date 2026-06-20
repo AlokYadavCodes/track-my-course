@@ -199,6 +199,7 @@
 ytd-item-section-renderer.style-scope.ytd-section-list-renderer #contents {
     position: relative;
 }
+#menu.style-scope.ytd-playlist-video-renderer,
 .ytLockupMetadataViewModelMenuButton {
     display: flex;
     justify-content: center;
