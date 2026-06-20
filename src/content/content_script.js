@@ -515,6 +515,13 @@ async function renderPPStartCourseBtn({ signal }) {
 
     if (signal.aborted) throw createAbortError();
     startCourseBtn.addEventListener("click", async () => {
+
+        // prevent multiple clicks
+        if (startCourseBtn.dataset.processing) return;
+        startCourseBtn.dataset.processing = "true";
+        startCourseBtn.style.cursor = "not-allowed";
+        startCourseBtn.style.opacity = "0.7";
+
         await updatePlaylistData();
         showToast("Course Started");
     });
