@@ -32,9 +32,9 @@
     --course-item-bg: rgba(0, 0, 0, 0.05);
     --course-item-hover-bg: rgba(0, 0, 0, 0.1);
 
-    --video-action-btn-bg: #0000000d;
+    --video-action-btn-bg: #f2f2f2;
     --video-action-btn-text: #0f0f0f;
-    --video-action-btn-hover-bg: #0000001a;
+    --video-action-btn-hover-bg: #e5e5e5;
 }
 
 html[dark] {
@@ -71,9 +71,9 @@ html[dark] {
     --course-item-bg: rgba(255, 255, 255, 0.1);
     --course-item-hover-bg: rgba(255, 255, 255, 0.2);
 
-    --video-action-btn-bg: #ffffff1a;
+    --video-action-btn-bg: #272727;
     --video-action-btn-text: #f1f1f1;
-    --video-action-btn-hover-bg: #ffffff33;
+    --video-action-btn-hover-bg: #3f3f3f;
 }
 
 .tmc-wp-start-course-btn {
