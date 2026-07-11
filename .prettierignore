@@ -1,0 +1,32 @@
+# build outputs
+dist
+build
+.next
+out
+.turbo
+.vercel
+.wxt
+.output
+
+# env & logs
+.env
+.env.*
+*.log
+
+# package manager
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# generated
+*.generated.*
+next-env.d.ts
+.next/types
+
+# misc caches
+.cache
+.eslintcache
+coverage
+
+*.md
+!README.md
