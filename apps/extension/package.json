@@ -1,5 +1,5 @@
 {
-  "name": "wxt-react-starter",
+  "name": "extension",
   "description": "manifest.json description",
   "private": true,
   "version": "0.0.0",
@@ -12,13 +12,18 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "@repo/ui": "workspace:*"
   },
   "devDependencies": {
+    "@repo/prettier-config": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/tailwind-config": "workspace:*",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@wxt-dev/module-react": "^1.1.5",

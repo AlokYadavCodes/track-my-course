@@ -23,6 +23,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@repo/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^19.2.4
         version: 19.2.7
@@ -30,6 +33,15 @@ importers:
         specifier: ^19.2.4
         version: 19.2.7(react@19.2.7)
     devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint-config
+      '@repo/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier-config
+      '@repo/tailwind-config':
+        specifier: workspace:*
+        version: link:../../tooling/tailwind-config
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.17
@@ -48,9 +60,6 @@ importers:
 
   packages/ui:
     dependencies:
-      '@repo/tailwind-config':
-        specifier: workspace:^
-        version: link:../../tooling/tailwind-config
       react:
         specifier: ^19.2.0
         version: 19.2.0
@@ -61,6 +70,9 @@ importers:
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint-config
+      '@repo/tailwind-config':
+        specifier: workspace:*
+        version: link:../../tooling/tailwind-config
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript-config

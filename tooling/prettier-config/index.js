@@ -5,7 +5,7 @@ const baseConfig = {
   printWidth: 80,
   tabWidth: 2,
   useTabs: false,
-  semi: false,
+  semi: true,
   singleQuote: false,
   trailingComma: "none",
   bracketSpacing: true,
@@ -29,6 +29,6 @@ const baseConfig = {
     "^[../]",
     "^[./]"
   ]
-}
+};
 
-export default baseConfig
+export default baseConfig;
