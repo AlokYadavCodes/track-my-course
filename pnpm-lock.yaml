@@ -23,6 +23,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@repo/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -57,6 +60,18 @@ importers:
       wxt:
         specifier: ^0.20.27
         version: 0.20.27(@types/node@22.15.3)(eslint@9.39.1(jiti@2.7.0))(jiti@2.7.0)(rolldown@1.1.5)
+
+  packages/core:
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript-config
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
 
   packages/ui:
     dependencies:
@@ -2837,6 +2852,7 @@ packages:
   typescript@5.9.2:
     resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}
     engines: {node: '>=14.17'}
+    hasBin: true
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}

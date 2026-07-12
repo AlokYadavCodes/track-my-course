@@ -1,5 +1,6 @@
 import "@repo/tailwind-config/style.css";
 import "./App.css";
+import { Button } from "@repo/ui/button";
 
 function App() {
   return (

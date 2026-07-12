@@ -7,5 +7,6 @@ export default defineConfig({
     eslintrc: {
       enabled: 9
     }
-  }
+  },
+  srcDir: "src",
 });

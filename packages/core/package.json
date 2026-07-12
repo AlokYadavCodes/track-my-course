@@ -1,0 +1,21 @@
+{
+  "name": "@repo/core",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./types": "./src/types.ts",
+    "./constants": "./src/constants.ts",
+    "./duration": "./src/duration.ts",
+    "./url": "./src/url.ts",
+    "./progress": "./src/progress.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "5.9.2"
+  }
+}
