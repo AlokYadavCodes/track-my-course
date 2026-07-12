@@ -65,7 +65,7 @@ export function formatDuration(duration: Duration): string {
 }
 
 /**
- * Formats a {@link Duration} as "Xh Ym" (no seconds — used for invested time).
+ * Formats a {@link Duration} as "Xh Ym" (no seconds; used for invested time).
  */
 export function formatDurationShort(duration: Duration): string {
   return `${duration.hours}h ${duration.minutes}m`;

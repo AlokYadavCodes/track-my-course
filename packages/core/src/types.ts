@@ -35,7 +35,7 @@ export interface CourseData {
 }
 
 /**
- * CourseData enriched with its playlist ID — used when rendering lists.
+ * CourseData enriched with its playlist ID; used when rendering lists.
  */
 export interface CourseEntry extends CourseData {
   id: string;
@@ -94,9 +94,9 @@ export const PageType = {
 export type PageType = (typeof PageType)[keyof typeof PageType];
 
 export const PlaylistLayout = {
-  /** Other's channel playlists — uses yt-lockup-view-model */
+  /** Other's channel playlists: uses yt-lockup-view-model */
   LOCKUP: "lockup",
-  /** Own/user-created playlists — uses ytd-playlist-video-renderer */
+  /** Own/user-created playlists: uses ytd-playlist-video-renderer */
   RENDERER: "renderer",
 } as const;
 
