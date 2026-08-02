@@ -1,0 +1,1025 @@
+:root {
+  --text-primary: #0f0f0f;
+  --start-button-text: #fff;
+  --start-button-bg: #0f0f0f;
+  --start-button-hover-bg: #444444;
+  --start-button-disabled-bg: #444444;
+  --start-button-disabled-text: #ffffffee;
+  --tooltip-bg: #fff;
+  --tooltip-border: #ccc;
+  --tooltip-text: #333;
+  --tooltip-shadow: #ccc;
+  --progress-bar-bg: #c0c0c0;
+  --progress-bar-color: green;
+  --completed-videos-bg: #eee;
+  --delete-btn-hover-bg: rgba(0, 0, 0, 0.05);
+  --delete-btn-border: rgba(0, 0, 0, 0.1);
+  --delete-popup-border: rgba(0, 0, 0, 0.1);
+  --confirm-delete-bg: #eee;
+  --confirm-delete-text: #0f0f0f;
+  --cancel-delete-bg: #0f0f0f;
+  --cancel-delete-text: #f1f1f1;
+  --popup-button-border: #88888833;
+  --course-panel-bg: #fff;
+  --course-panel-border: rgba(0, 0, 0, 0.1);
+  --course-item-bg: rgba(0, 0, 0, 0.05);
+  --course-item-hover-bg: rgba(0, 0, 0, 0.1);
+  --video-action-btn-bg: linear-gradient(
+    145deg,
+    rgba(0, 0, 0, 0.02),
+    rgba(0, 0, 0, 0.055),
+    rgba(0, 0, 0, 0.09)
+  );
+  --video-action-btn-text: #0f0f0f;
+  --video-action-btn-hover-bg: linear-gradient(
+    145deg,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.09),
+    rgba(0, 0, 0, 0.13)
+  );
+  --video-action-btn-highlight: rgba(255, 255, 255, 0.9);
+  --toggle-bg: #0000000d;
+  --toggle-text: #0f0f0f;
+  --toggle-hover-bg: #0000001a;
+  --tmc-text-primary: #0f0f0f;
+  --tmc-text-secondary: #606060;
+  --tmc-divider: rgba(0, 0, 0, 0.1);
+  --tmc-hover-surface: rgba(0, 0, 0, 0.08);
+  --tmc-progress-bg: rgba(0, 0, 0, 0.1);
+  --tmc-progress-fill: #065fd4;
+  --tmc-toast-text: #f1f1f1;
+  --tmc-toast-bg: #0f0f0f;
+}
+
+html[dark] {
+  --text-primary: #f1f1f1;
+  --start-button-text: #0f0f0f;
+  --start-button-bg: #f1f1f1;
+  --start-button-hover-bg: #d9d9d9;
+  --start-button-disabled-bg: #d9d9d9;
+  --start-button-disabled-text: #0f0f0fee;
+  --tooltip-bg: #272727;
+  --tooltip-border: #ccc;
+  --tooltip-text: #f1f1f1;
+  --tooltip-shadow: #666;
+  --progress-bar-bg: #eee;
+  --progress-bar-color: #009000;
+  --completed-videos-bg: #ffffff1a;
+  --delete-btn-hover-bg: rgba(255, 255, 255, 0.1);
+  --delete-btn-border: rgba(255, 255, 255, 0.2);
+  --delete-popup-border: rgba(255, 255, 255, 0.2);
+  --confirm-delete-bg: #4a4a4a;
+  --confirm-delete-text: #f1f1f1;
+  --cancel-delete-bg: #f1f1f1;
+  --cancel-delete-text: #0f0f0f;
+  --popup-button-border: #cccccc33;
+  --course-panel-bg: #212121;
+  --course-panel-border: rgba(255, 255, 255, 0.2);
+  --course-item-bg: rgba(255, 255, 255, 0.1);
+  --course-item-hover-bg: rgba(255, 255, 255, 0.2);
+  --video-action-btn-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.115),
+    rgba(255, 255, 255, 0.075)
+  );
+  --video-action-btn-text: #f1f1f1;
+  --video-action-btn-hover-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(255, 255, 255, 0.18),
+    rgba(255, 255, 255, 0.14)
+  );
+  --video-action-btn-highlight: rgba(255, 255, 255, 0.16);
+  --toggle-bg: #ffffff1a;
+  --toggle-text: #f1f1f1;
+  --toggle-hover-bg: #ffffff33;
+  --tmc-text-primary: #f1f1f1;
+  --tmc-text-secondary: #aaa;
+  --tmc-divider: rgba(255, 255, 255, 0.2);
+  --tmc-hover-surface: rgba(255, 255, 255, 0.08);
+  --tmc-progress-bg: rgba(255, 255, 255, 0.2);
+  --tmc-progress-fill: #3ea6ff;
+  --tmc-toast-text: #0f0f0f;
+  --tmc-toast-bg: #f1f1f1;
+}
+
+/* Toast */
+.tmc-toast {
+  box-sizing: border-box;
+  padding: 0 24px;
+  min-width: 200px;
+  height: 48px;
+  border-radius: 8px;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--tmc-toast-bg);
+  color: var(--tmc-toast-text);
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 9999;
+  animation: tmc-slide-in 0.2s forwards;
+}
+
+@keyframes tmc-slide-in {
+  from {
+    transform: translateY(50px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tmc-slide-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+}
+
+/* Checkbox */
+.tmc-checkbox-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.tmc-wp-checkbox-wrapper {
+  width: 32px;
+  height: 32px;
+}
+
+.tmc-pp-checkbox-wrapper {
+  width: 36px;
+  height: 36px;
+}
+
+.tmc-checkbox-wrapper .background {
+  fill: #aaa;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.tmc-checkbox-wrapper .ring {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.5px;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.tmc-checkbox-wrapper .stroke {
+  fill: none;
+  stroke: #fff;
+  stroke-miterlimit: 10;
+  stroke-width: 2.5px;
+  stroke-dashoffset: 100;
+  stroke-dasharray: 100;
+  transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.tmc-checkbox-wrapper .check,
+.tmc-checkbox-wrapper .hover-tick {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dashoffset: 22;
+  stroke-dasharray: 22;
+}
+
+.tmc-checkbox-wrapper .check {
+  stroke: #fff;
+  stroke-width: 2.5px;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  transition-delay: 0.15s;
+}
+
+.tmc-checkbox-wrapper .hover-tick {
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 2px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .stroke {
+  stroke-dashoffset: 100;
+  stroke: #aaa;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .check {
+  stroke-dashoffset: 22;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:not(:checked) + svg .ring {
+  opacity: 1;
+}
+
+.tmc-checkbox-wrapper:hover
+  input[type="checkbox"]:not(:checked)
+  + svg
+  .hover-tick {
+  stroke-dashoffset: 0;
+  opacity: 1;
+}
+
+.tmc-checkbox-wrapper:hover
+  input[type="checkbox"]:not(:checked)
+  + svg
+  .background {
+  fill: #999;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .stroke,
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .check {
+  stroke-dashoffset: 0;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .background {
+  fill: #4caf50;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .hover-tick,
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg .ring {
+  opacity: 0;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:focus-visible + svg {
+  outline: 2px solid #ff7043;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:active + svg {
+  transform: scale(0.95);
+}
+
+.tmc-checkbox-wrapper input[type="checkbox"]:checked + svg {
+  animation: tmc-pulse 0.4s ease;
+}
+
+@keyframes tmc-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+#menu.style-scope.ytd-playlist-panel-video-renderer,
+#menu.style-scope.ytd-playlist-video-renderer,
+.ytLockupMetadataViewModelMenuButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row-reverse;
+}
+
+/* Start buttons */
+.tmc-wp-start-course-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 28px;
+  min-width: fit-content;
+  white-space: nowrap;
+  color: var(--start-button-text);
+  background-color: var(--start-button-bg);
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 18px;
+  text-align: center;
+  cursor: pointer;
+  font-family: "Roboto", "Arial", sans-serif;
+}
+
+.tmc-wp-start-course-btn:disabled {
+  cursor: not-allowed;
+  background-color: var(--start-button-disabled-bg);
+  color: var(--start-button-disabled-text);
+}
+
+.tmc-wp-start-course-btn:hover {
+  background-color: var(--start-button-hover-bg);
+}
+
+.tmc-pp-start-course-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 36px;
+  border-radius: 18px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: #fff;
+  color: #000;
+}
+
+.tmc-pp-start-course-btn:hover {
+  opacity: 0.9;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.disabled-btn-container {
+  position: relative;
+}
+
+.disabled-btn-container .tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--tooltip-bg);
+  border: 1px solid var(--tooltip-border);
+  border-radius: 8px;
+  padding: 10px;
+  width: 190px;
+  box-shadow: 2px 2px 4px var(--tooltip-shadow);
+  z-index: 10;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "Roboto", "Arial", sans-serif;
+  line-height: 18px;
+  color: var(--tooltip-text);
+}
+
+.disabled-btn-container:hover .tooltip,
+.disabled-btn-container button:focus + .tooltip {
+  display: block;
+}
+
+.disabled-btn-container .tooltip a {
+  text-decoration: underline;
+  color: inherit;
+}
+
+#header-top-row #header-description h3.style-scope.ytd-playlist-panel-renderer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Watch playlist progress */
+.tmc-wp-progress-div {
+  position: relative;
+}
+
+.tmc-wp-progress-div .progress-content-wrapper {
+  height: 100%;
+  width: 100%;
+  color: var(--text-primary);
+  margin: 8px 0;
+  position: relative;
+}
+
+.tmc-wp-progress-div .progress-bar-outer-container {
+  padding: 0 12px 0 2px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 8px;
+}
+
+.tmc-wp-progress-div .progress-bar-container {
+  width: 100%;
+  height: 100%;
+  background-color: var(--progress-bar-bg);
+}
+
+.tmc-wp-progress-div #progress-bar {
+  height: 100%;
+  background-color: var(--progress-bar-color);
+}
+
+.tmc-wp-progress-div .time-container {
+  display: flex;
+  padding: 0 16px 0 6px;
+  font-size: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tmc-wp-progress-div .completed-in {
+  margin: 8px 10px 8px 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.tmc-wp-progress-div .completed-videos {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  height: 20px;
+  width: fit-content;
+  background-color: var(--completed-videos-bg);
+  gap: 4px;
+  position: relative;
+  bottom: 4px;
+  border-radius: 4px;
+  padding: 0 8px;
+}
+
+.tmc-wp-progress-div .tmc-delete-btn {
+  border-radius: 8px 0 8px 0;
+  border-width: 1px 0 0 1px;
+  border-style: solid;
+  border-color: var(--delete-btn-border);
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+}
+
+.tmc-wp-progress-div .tmc-delete-btn:hover {
+  background-color: var(--delete-btn-hover-bg);
+  cursor: pointer;
+}
+
+.tmc-wp-progress-div .tmc-delete-popup {
+  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 10px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px solid var(--delete-popup-border);
+  border-width: 1px 0;
+  width: calc(100% + 22px);
+  margin-left: -16px;
+  margin-top: -4px;
+  height: 64px;
+  color: var(--text-primary);
+  font-family: "YouTube Sans", "Roboto", sans-serif;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Playlist page progress */
+.tmc-pp-progress-div {
+  margin-top: 10px;
+  position: relative;
+  color: #f1f1f1;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  animation: tmc-fade-slide-in 0.4s ease forwards;
+}
+
+.tmc-pp-progress-div .progress-content-wrapper {
+  padding: 10px;
+  width: -webkit-fill-available;
+  font-weight: 500;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.tmc-pp-progress-div .tmc-total,
+.tmc-pp-progress-div .tmc-watched,
+.tmc-pp-progress-div .tmc-duration {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  height: 20px;
+  width: fit-content;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.tmc-pp-progress-div .tmc-remaining {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.tmc-pp-progress-div .tmc-ring-progress {
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.tmc-pp-progress-div .tmc-actions {
+  border-radius: 8px 0 8px 0;
+  border-width: 1px 0 0 1px;
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1);
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  z-index: 9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tmc-pp-progress-div .tmc-actions > * {
+  padding: 4px 6px;
+}
+
+.tmc-pp-progress-div .tmc-actions > *:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.tmc-pp-progress-div .tmc-actions > * + * {
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tmc-pp-progress-div .tmc-delete-popup {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  padding: 10px 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tmc-progress-div.deleting .tmc-delete-popup {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.tmc-progress-div.deleting .progress-content-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tmc-delete-popup p {
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.tmc-delete-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.tmc-delete-buttons button {
+  padding: 4px 14px;
+  border: 1px solid var(--popup-button-border);
+  border-radius: 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.tmc-delete-buttons button:hover {
+  opacity: 0.8;
+}
+
+.tmc-confirm-delete {
+  background-color: var(--confirm-delete-bg);
+  color: var(--confirm-delete-text);
+}
+
+.tmc-cancel-delete {
+  background-color: var(--cancel-delete-bg);
+  color: var(--cancel-delete-text);
+}
+
+.tmc-refresh > svg.rotating {
+  animation: tmc-rotate 0.4s linear;
+}
+
+.tmc-refresh > svg.scanning {
+  animation: tmc-rotate 1s linear infinite;
+}
+
+@keyframes tmc-fade-slide-in {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tmc-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Playlist scanning overlay */
+.tmc-scanning-playlist {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  backdrop-filter: blur(4px) saturate(180%);
+  -webkit-backdrop-filter: blur(4px) saturate(180%);
+  background-color: rgba(51, 51, 51, 0.75);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.tmc-scanning-text {
+  position: fixed;
+  top: 50vh;
+  transform: translateX(-50%);
+  color: #f1f1f1;
+  font-size: 24px;
+  font-family: "YouTube Sans", sans-serif;
+  font-weight: 500;
+  text-align: center;
+  z-index: 1001;
+}
+
+.tmc-scanning-text p {
+  font-weight: 400;
+  font-size: 16px;
+}
+
+/* Focus mode */
+body.tmc-focus-mode #related {
+  display: none;
+}
+
+body.tmc-focus-mode #comments.tmc-comments-hidden {
+  display: none;
+}
+
+#tmc-toggle-comments-btn {
+  background-color: var(--toggle-bg);
+  color: var(--toggle-text);
+  border: none;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Roboto", "Arial", sans-serif;
+}
+
+#tmc-toggle-comments-btn:hover {
+  background-color: var(--toggle-hover-bg);
+  transition: background-color 0.2s ease;
+}
+
+/* Video course panel */
+.tmc-video-course-panel {
+  width: 100%;
+  background-color: var(--course-panel-bg);
+  border: 1px solid var(--course-panel-border);
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tmc-video-course-header {
+  font-size: 20px;
+  font-family: "YouTube Sans", "Roboto", sans-serif;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tmc-video-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tmc-video-course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background-color: var(--course-item-bg);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.tmc-video-course-item:hover {
+  background: var(--course-item-hover-bg);
+}
+
+.tmc-video-course-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 10px;
+}
+
+.tmc-video-course-icon svg {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.tmc-video-course-item:hover .tmc-video-course-icon svg {
+  opacity: 0.85;
+}
+
+/* Watched video action button */
+.tmc-watched-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  margin: 0 8px;
+  padding: 0 16px 0 12px;
+  border: none;
+  border-radius: 24px;
+  background: var(--video-action-btn-bg);
+  color: var(--video-action-btn-text);
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+  position: relative;
+  box-shadow: inset 0 2px 0 -1px var(--video-action-btn-highlight);
+  line-height: 1;
+  user-select: none;
+}
+
+.tmc-watched-btn:hover,
+.tmc-watched-btn:active {
+  background: var(--video-action-btn-hover-bg);
+}
+
+.tmc-circle-fill {
+  opacity: 0;
+}
+
+.tmc-watched-btn.watched .tmc-circle-outline {
+  opacity: 0;
+}
+
+.tmc-watched-btn.watched .tmc-circle-fill {
+  opacity: 1;
+}
+
+.tmc-watched-btn.watched .tmc-watched-tick {
+  stroke: #fff;
+}
+
+html[dark] .tmc-watched-btn.watched .tmc-watched-tick {
+  stroke: #0f0f0f;
+}
+
+.tmc-watched-btn--animating .tmc-watched-icon {
+  animation: tmc-spring-bounce 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tmc-spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  left: 28px;
+  top: 50%;
+  pointer-events: none;
+  animation: tmc-spark-burst 0.65s ease-out forwards;
+}
+
+@keyframes tmc-spring-bounce {
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(0.85);
+  }
+  40% {
+    transform: scale(1.25);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes tmc-spark-burst {
+  0% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%)
+      translate(calc(cos(var(--angle)) * 28px), calc(sin(var(--angle)) * 28px))
+      scale(0);
+    opacity: 0;
+  }
+}
+
+/* Home page course cards */
+ytd-browse:has(
+    ytd-two-column-browse-results-renderer[style*="touch-action: unset"]
+  )
+  .tmc-home-section {
+  z-index: 0;
+}
+
+.tmc-home-section {
+  width: 100%;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  border-bottom: 1px solid var(--tmc-divider);
+  position: relative;
+  z-index: 2019;
+}
+
+.tmc-home-section-title {
+  font-family: "YouTube Sans", "Roboto", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tmc-text-primary);
+  padding-left: 8px;
+}
+
+.tmc-home-courses-scroller {
+  display: flex;
+  overflow-x: auto;
+  gap: 18px;
+  padding: 16px;
+  scrollbar-width: none;
+}
+
+.tmc-home-courses-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.tmc-home-course-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 300px;
+  max-width: 300px;
+  text-decoration: none;
+  color: inherit;
+  --hover-gap: 12px;
+}
+
+.tmc-home-course-card::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--hover-gap));
+  left: calc(-1 * var(--hover-gap));
+  right: calc(-1 * var(--hover-gap));
+  bottom: calc(-1 * var(--hover-gap));
+  background-color: var(--tmc-hover-surface);
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+
+.tmc-home-course-card:hover::before {
+  opacity: 1;
+}
+
+.tmc-home-course-card-thumbnail {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #333;
+  margin-bottom: 12px;
+  text-decoration: none;
+}
+
+.tmc-home-course-card-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.tmc-home-course-card-thumbnail-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #f1f1f1;
+  background-color: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.tmc-home-course-card-thumbnail-overlay .icon {
+  margin: 4px;
+  width: 28px;
+}
+
+.tmc-home-course-card-thumbnail-overlay .text {
+  margin: 4px;
+  font-size: 18px;
+  font-family: "Roboto", sans-serif;
+}
+
+.tmc-home-course-card-thumbnail:hover .tmc-home-course-card-thumbnail-overlay {
+  opacity: 1;
+}
+
+.tmc-home-course-card-info {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tmc-home-course-card-title {
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  color: var(--tmc-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.tmc-home-course-card-stats {
+  font-size: 14px;
+  color: var(--tmc-text-secondary);
+  margin-bottom: 8px;
+}
+
+.tmc-home-course-card-progress-bg {
+  width: 100%;
+  height: 4px;
+  background-color: var(--tmc-progress-bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tmc-home-course-card-progress-fill {
+  height: 100%;
+  background-color: var(--tmc-progress-fill);
+}

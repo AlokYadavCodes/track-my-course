@@ -1,6 +1,12 @@
-import type { CourseData, Duration, PageType, PlaylistLayout } from "@repo/core/types";
+import type {
+  CourseData,
+  Duration,
+  PageType,
+  PlaylistLayout
+} from "@repo/core/types";
 import { ZERO_DURATION } from "@repo/core/constants";
-import { courseRepository } from "../storage/course-repository";
+
+import { courseRepository } from "../../../storage/course-repository";
 import { createAbortError } from "./dom-utils";
 
 // --- Content State ---
@@ -49,7 +55,7 @@ export const state: ContentState = {
   lastWatchedVideoId: null,
   lastInteractedAt: null,
 
-  focusMode: false,
+  focusMode: false
 };
 
 // --- State Helpers ---
@@ -74,7 +80,7 @@ export function buildCourseData(): CourseData {
     courseImgSrc: state.courseImgSrc,
     courseName: state.courseName,
     lastWatchedVideoId: state.lastWatchedVideoId,
-    lastInteractedAt: state.lastInteractedAt,
+    lastInteractedAt: state.lastInteractedAt
   };
 }
 
@@ -86,13 +92,13 @@ export function buildCourseData(): CourseData {
  */
 export async function loadCourseData(
   playlistId: string,
-  signal: AbortSignal,
+  signal: AbortSignal
 ): Promise<void> {
   if (signal.aborted) throw createAbortError();
 
   const [courseData, focusMode] = await Promise.all([
     courseRepository.getCourse(playlistId),
-    courseRepository.getFocusMode(),
+    courseRepository.getFocusMode()
   ]);
 
   if (signal.aborted) throw createAbortError();

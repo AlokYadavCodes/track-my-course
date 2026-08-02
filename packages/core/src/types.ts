@@ -88,7 +88,7 @@ export type BackgroundMessage =
 export const PageType = {
   WATCH: "watch",
   PLAYLIST: "playlist",
-  HOME: "home",
+  HOME: "home"
 } as const;
 
 export type PageType = (typeof PageType)[keyof typeof PageType];
@@ -97,7 +97,7 @@ export const PlaylistLayout = {
   /** Other's channel playlists: uses yt-lockup-view-model */
   LOCKUP: "lockup",
   /** Own/user-created playlists: uses ytd-playlist-video-renderer */
-  RENDERER: "renderer",
+  RENDERER: "renderer"
 } as const;
 
 export type PlaylistLayout =

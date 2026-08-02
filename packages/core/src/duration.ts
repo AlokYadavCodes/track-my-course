@@ -21,9 +21,15 @@ export function hmsToSeconds(durationString: string): number {
 /**
  * Converts a {@link Duration} object to total seconds.
  */
-export function durationToSeconds(duration: Duration | undefined | null): number {
+export function durationToSeconds(
+  duration: Duration | undefined | null
+): number {
   if (!duration) return 0;
-  return (duration.hours || 0) * 3600 + (duration.minutes || 0) * 60 + (duration.seconds || 0);
+  return (
+    (duration.hours || 0) * 3600 +
+    (duration.minutes || 0) * 60 +
+    (duration.seconds || 0)
+  );
 }
 
 /**
@@ -34,7 +40,7 @@ export function secondsToDuration(totalSeconds: number): Duration {
   return {
     hours: Math.floor(seconds / 3600),
     minutes: Math.floor((seconds % 3600) / 60),
-    seconds: seconds % 60,
+    seconds: seconds % 60
   };
 }
 
@@ -52,7 +58,10 @@ export function addDuration(base: Duration, durationString: string): Duration {
  * Subtracts seconds from a {@link Duration}. Result is clamped to 0.
  * Does not mutate the input.
  */
-export function subtractSeconds(base: Duration, secondsToRemove: number): Duration {
+export function subtractSeconds(
+  base: Duration,
+  secondsToRemove: number
+): Duration {
   const baseSeconds = durationToSeconds(base);
   return secondsToDuration(Math.max(0, baseSeconds - secondsToRemove));
 }

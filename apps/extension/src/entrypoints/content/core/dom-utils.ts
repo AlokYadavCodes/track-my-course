@@ -37,7 +37,7 @@ export interface WaitForElementOptions {
 export function waitForElement({
   selector,
   signal,
-  parentEl,
+  parentEl
 }: WaitForElementOptions): Promise<Element> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
@@ -70,7 +70,7 @@ export function waitForElement({
 
     observer.observe(target, {
       childList: true,
-      subtree: true,
+      subtree: true
     });
   });
 }
@@ -86,25 +86,26 @@ export function waitForElement({
  * progress bar is visible.
  */
 export async function waitForNavigation(): Promise<void> {
-  const progressBar = document.querySelector(
-    SELECTORS.ytNavigationProgress,
-  );
-  if (!progressBar) return;
+  const navProgressBar = document.querySelector(SELECTORS.ytNavigationProgress);
+
+  if (
+    !navProgressBar ||
+    navProgressBar.hasAttribute("hidden") ||
+    navProgressBar.getAttribute("aria-valuenow") === "100"
+  )
+    return;
 
   return new Promise((resolve) => {
-    const observer = new MutationObserver(() => {
-      const bar = document.querySelector(
-        SELECTORS.ytNavigationProgress,
-      );
-      if (!bar) {
-        observer.disconnect();
+    const observer = new MutationObserver((_, obs) => {
+      if (navProgressBar.getAttribute("aria-valuenow") === "100") {
+        obs.disconnect();
         resolve();
       }
     });
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
+    observer.observe(navProgressBar, {
+      attributes: true,
+      attributeFilter: ["aria-valuenow"]
     });
   });
 }
@@ -117,9 +118,7 @@ export async function waitForNavigation(): Promise<void> {
  *
  * Returns `null` if conversion fails (CORS, network error, etc).
  */
-export async function imgSrcToBase64(
-  imgSrc: string,
-): Promise<string | null> {
+export async function imgSrcToBase64(imgSrc: string): Promise<string | null> {
   try {
     const response = await fetch(imgSrc);
     const blob = await response.blob();

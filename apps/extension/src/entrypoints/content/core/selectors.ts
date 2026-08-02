@@ -11,11 +11,11 @@ export const SELECTORS = {
   watchPage: {
     playlistItems: "#playlist:not([hidden]) #items",
     playlistMenu:
-      "#playlist:not([hidden]) h3.ytd-playlist-panel-renderer:has(yt-formatted-string.title)",
+      "#playlist:not([hidden]) h3.ytd-playlist-panel-renderer:has(.title)",
     headerContents: "#playlist:not([hidden]) #header-contents",
     playlistActions: "#playlist:not([hidden]) #playlist-actions",
     recommendations: "#related",
-    comments: "#comments",
+    comments: "#comments"
   },
 
   playlistPage: {
@@ -31,12 +31,11 @@ export const SELECTORS = {
 
     // Own/user-created playlist selectors (renderer layout)
     ownPlaylist: {
-      contentDiv:
-        "ytd-browse #contents:has(>ytd-playlist-video-renderer)",
+      contentDiv: "ytd-browse #contents:has(>ytd-playlist-video-renderer)",
       playlistVideo: "ytd-playlist-video-renderer",
       playlistVideoLink: "#video-title",
       playlistVideoMenu: "#menu",
-      playlistContinuation: "ytd-continuation-item-renderer",
+      playlistContinuation: "ytd-continuation-item-renderer"
     },
 
     progressDivWideScreenRefEl:
@@ -52,18 +51,16 @@ export const SELECTORS = {
     ytCourse: {
       startCourseBtnWideScreenRefEl: ".play-menu.wide-screen-form",
       startCourseBtnSmallScreenRefEl: ".play-menu.small-screen-form",
-      progressDivWideScreenRefEl:
-        ".metadata-wrapper > .metadata-action-bar",
-      progressDivSmallScreenRefEl:
-        ".metadata-wrapper > .metadata-action-bar",
+      progressDivWideScreenRefEl: ".metadata-wrapper > .metadata-action-bar",
+      progressDivSmallScreenRefEl: ".metadata-wrapper > .metadata-action-bar",
       playlistNameEl:
-        ".metadata-wrapper > yt-dynamic-sizing-formatted-string #container yt-formatted-string",
-    },
+        ".metadata-wrapper > yt-dynamic-sizing-formatted-string #container yt-formatted-string"
+    }
   },
 
   homePage: {
-    homePage: "ytd-browse[page-subtype=home]",
-  },
+    homePage: "ytd-browse[page-subtype=home]"
+  }
 } as const;
 
 /** The subset of selectors used for playlist content areas (videos, links, menus). */
@@ -81,7 +78,7 @@ export interface PlaylistContentSelectors {
  * - RENDERER: Own/user-created playlists (ytd-playlist-video-renderer)
  */
 export function getPlaylistContentSelectors(
-  layout: PlaylistLayout,
+  layout: PlaylistLayout
 ): PlaylistContentSelectors {
   if (layout === PlaylistLayoutValue.RENDERER) {
     return SELECTORS.playlistPage.ownPlaylist;
@@ -91,6 +88,6 @@ export function getPlaylistContentSelectors(
     playlistVideo: SELECTORS.playlistPage.playlistVideo,
     playlistVideoLink: SELECTORS.playlistPage.playlistVideoLink,
     playlistVideoMenu: SELECTORS.playlistPage.playlistVideoMenu,
-    playlistContinuation: SELECTORS.playlistPage.playlistContinuation,
+    playlistContinuation: SELECTORS.playlistPage.playlistContinuation
   };
 }

@@ -8,7 +8,7 @@ export interface StorageChangeInfo {
 }
 
 export type StorageChangeCallback = (
-  changes: Record<string, StorageChangeInfo>,
+  changes: Record<string, StorageChangeInfo>
 ) => void;
 
 /**
@@ -57,7 +57,7 @@ class ChromeLocalStorageAdapter implements StorageAdapter {
   onChanged(callback: StorageChangeCallback): () => void {
     const listener = (
       changes: Record<string, StorageChangeInfo>,
-      areaName: string,
+      areaName: string
     ) => {
       if (areaName !== "local") return;
       callback(changes);

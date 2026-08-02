@@ -1,6 +1,10 @@
+import { initializeRouter } from "./page-router";
+
+import "./styles/content.css";
+
 export default defineContentScript({
-  matches: ["*://*.google.com/*"],
-  main() {
-    console.log("Hello content.");
+  matches: ["*://*.youtube.com/*"],
+  main(ctx) {
+    initializeRouter(ctx);
   }
 });

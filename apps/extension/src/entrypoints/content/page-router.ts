@@ -1,44 +1,73 @@
-import type { BackgroundMessage } from "@repo/core/types";
+import type { ContentScriptContext } from "wxt/utils/content-script-context";
+
 import { PageType } from "@repo/core/types";
-import { getPlaylistId, getVideoId } from "@repo/core/url";
+import { getPlaylistId } from "@repo/core/url";
+
+import type { StorageChangeEvent } from "../../storage/course-repository";
+import { courseRepository } from "../../storage/course-repository";
+import { isAbortError, waitForNavigation } from "./core/dom-utils";
+import { lifecycle } from "./core/lifecycle";
 import {
-  courseRepository,
-  type StorageChangeEvent,
-} from "../storage/course-repository";
-import { isAbortError } from "./dom-utils";
-import { waitForNavigation } from "./dom-utils";
-import { lifecycle } from "./lifecycle";
-import {
-  state,
+  isEnrolledCourse,
   loadCourseData,
   resetCourseData,
-  isEnrolledCourse,
-  saveCourseState,
-} from "./state";
+  state
+} from "./core/state";
+import {
+  removeHomeCoursesSection,
+  updateHomeCoursesContent,
+  updateHomePage
+} from "./pages/home";
+import {
+  cleanupPlaylistPage,
+  refreshPlaylistPageUI,
+  updatePlaylistPage
+} from "./pages/playlist";
+import {
+  refreshWatchPageUI,
+  updateWatchPlaylistPage,
+  updateWatchPlaylistPartial
+} from "./pages/watch-playlist";
+import {
+  removeCommentsToggleButton,
+  toggleFocusModeUI
+} from "./pages/watch-playlist/components/focus-mode";
+import { updateWatchStandalonePage } from "./pages/watch-standalone";
+import { removeVideoCheckboxes } from "./ui/checkbox";
+import { removeProgressDiv } from "./ui/progress-bar";
+import { removeStartCourseButtons } from "./ui/start-course-btn";
+import { removeVideoCourseList } from "./ui/video-course-panel";
+import { removeVideoWatchedButton } from "./ui/watched-button";
 
 // --- Initialization ---
 
 /**
  * Entry point for the content script.
- * Call once from the content script's `main()` function.
+ * Call once from the content script's `main(ctx)` function.
  *
  * Sets up:
  * 1. Initial page detection (runs once on load)
- * 2. Navigation message listener (from background script)
+ * 2. SPA navigation listener (via WXT's wxt:locationchange)
  * 3. Storage change listener (cross-tab sync, popup actions)
  */
-export function initializeRouter(): void {
+export function initializeRouter(ctx: ContentScriptContext): void {
   handleInitialLoad();
 
-  // SPA navigation events from the background script
-  browser.runtime.onMessage.addListener((message: unknown): true => {
-    handleNavigationMessage(message as BackgroundMessage).catch((err) => {
+  // SPA navigation events detected directly in the content script.
+  // WXT patches History.pushState/replaceState and listens for popstate,
+  // firing wxt:locationchange on every URL change. No background script
+  // or webNavigation permission needed.
+  ctx.addEventListener(window, "wxt:locationchange", (event) => {
+    handleLocationChange(event.newUrl).catch((err) => {
       if (!isAbortError(err)) {
         console.error("[TMC] Error handling navigation:", err);
       }
     });
-    return true;
   });
+
+  // Clean up page lifecycle when the content script context is invalidated
+  // (e.g. extension update while the tab is still open)
+  ctx.onInvalidated(() => lifecycle.teardown());
 
   // Storage change events (cross-tab sync, popup actions)
   courseRepository.onChanged(handleStorageChanges);
@@ -85,44 +114,51 @@ function handleInitialLoad(): void {
     state.currentPage = detected.page;
     state.playlistId = detected.playlistId;
     handleFullPageUpdate(detected.page);
-  } else if (url.includes("/watch?v=")) {
+  } else if (isOnStandaloneVideo()) {
     // Standalone video: no playlist context, but video-level features
     state.currentPage = null;
+    console.log("It's a standalone video...");
     handleStandaloneVideo();
   }
 }
 
-// --- Navigation Message Handling ---
+// --- SPA Navigation Handling ---
 
 /**
- * Handles navigation messages from the background script.
- * The background script sends these on YouTube SPA navigations
- * (detected via webNavigation.onHistoryStateUpdated).
+ * Handles YouTube SPA navigation by classifying the new URL
+ * and dispatching to the appropriate page handler.
+ *
+ * Called on every wxt:locationchange event (History API navigation).
  */
-async function handleNavigationMessage(
-  message: BackgroundMessage,
-): Promise<void> {
-  switch (message.action) {
-    case "updateWatchPage":
-      await handleWatchPageNavigation(message.playlistId);
-      break;
+async function handleLocationChange(newUrl: URL): Promise<void> {
+  const detected = detectPageType(newUrl.href);
 
-    case "updatePlaylistPage":
-      await handlePlaylistPageNavigation(message.playlistId);
-      break;
+  console.log("newUrl", newUrl);
+  console.log("detected", detected);
 
-    case "updateHomePage":
-      await handleHomePageNavigation();
-      break;
-
-    case "someOtherPage":
-      handleLeavingManagedPage();
-      break;
+  if (detected) {
+    switch (detected.page) {
+      case PageType.WATCH:
+        await handleWatchPageNavigation(detected.playlistId);
+        break;
+      case PageType.PLAYLIST:
+        await handlePlaylistPageNavigation(detected.playlistId!);
+        break;
+      case PageType.HOME:
+        await handleHomePageNavigation();
+        break;
+    }
+  } else if (isOnStandaloneVideo()) {
+    // Standalone video (no playlist in URL)
+    await handleWatchPageNavigation(null);
+  } else {
+    // Non-managed page (channel, search, shorts, etc.)
+    handleLeavingManagedPage();
   }
 }
 
 async function handleWatchPageNavigation(
-  playlistId: string | null,
+  playlistId: string | null
 ): Promise<void> {
   // Standalone video (no playlist)
   if (playlistId === null) {
@@ -135,12 +171,10 @@ async function handleWatchPageNavigation(
   }
 
   const isNewContext =
-    state.currentPage !== PageType.WATCH ||
-    state.playlistId !== playlistId;
+    state.currentPage !== PageType.WATCH || state.playlistId !== playlistId;
 
   state.currentPage = PageType.WATCH;
   state.playlistId = playlistId;
-
 
   await waitForNavigation();
 
@@ -152,12 +186,9 @@ async function handleWatchPageNavigation(
   }
 }
 
-async function handlePlaylistPageNavigation(
-  playlistId: string,
-): Promise<void> {
+async function handlePlaylistPageNavigation(playlistId: string): Promise<void> {
   const isNewContext =
-    state.currentPage !== PageType.PLAYLIST ||
-    state.playlistId !== playlistId;
+    state.currentPage !== PageType.PLAYLIST || state.playlistId !== playlistId;
 
   state.currentPage = PageType.PLAYLIST;
   state.playlistId = playlistId;
@@ -170,11 +201,15 @@ async function handlePlaylistPageNavigation(
 
 async function handleHomePageNavigation(): Promise<void> {
   state.currentPage = PageType.HOME;
+  console.log("handleHomePageNavigation called");
+  console.log("waitForNavigation pending");
   await waitForNavigation();
+  console.log("waitForNavigation done");
   await handleFullPageUpdate(PageType.HOME);
 }
 
 function handleLeavingManagedPage(): void {
+  console.log("un-managed page");
   lifecycle.teardown();
   state.currentPage = null;
   state.playlistId = null;
@@ -199,7 +234,7 @@ function handleStorageChanges(changes: StorageChangeEvent[]): void {
   for (const change of changes) {
     if (change.type === "focusMode") {
       state.focusMode = change.value;
-      // TODO: toggleFocusModeUI(change.value);
+      toggleFocusModeUI(change.value);
     } else {
       courseChanges.push(change);
     }
@@ -220,7 +255,7 @@ function handleStorageChanges(changes: StorageChangeEvent[]): void {
  * call `handleStandaloneVideo` for the other playlist changes.
  */
 function handleCourseStorageChanges(
-  changes: Extract<StorageChangeEvent, { type: "course" }>[],
+  changes: Extract<StorageChangeEvent, { type: "course" }>[]
 ): void {
   const currentPlaylistChange = state.playlistId
     ? changes.find((c) => c.playlistId === state.playlistId)
@@ -228,7 +263,7 @@ function handleCourseStorageChanges(
 
   switch (state.currentPage) {
     case PageType.HOME:
-      // TODO: updateHomeCoursesContent();
+      handleHomeStorageChange();
       return;
 
     case PageType.WATCH:
@@ -246,7 +281,7 @@ function handleCourseStorageChanges(
 }
 
 function handleWatchPageStorageChange(
-  change: Extract<StorageChangeEvent, { type: "course" }> | undefined,
+  change: Extract<StorageChangeEvent, { type: "course" }> | undefined
 ): void {
   // No change for the current playlist: refresh video-level UI (cross-course sync)
   if (!change) {
@@ -265,7 +300,7 @@ function handleWatchPageStorageChange(
 }
 
 function handlePlaylistPageStorageChange(
-  change: Extract<StorageChangeEvent, { type: "course" }> | undefined,
+  change: Extract<StorageChangeEvent, { type: "course" }> | undefined
 ): void {
   if (!change) return;
 
@@ -287,15 +322,9 @@ type PageHandler = (signal: AbortSignal) => Promise<void>;
  * Maps page types to their update handler functions.
  */
 const PAGE_HANDLERS: Record<PageType, PageHandler> = {
-  [PageType.WATCH]: async (_signal: AbortSignal) => {
-    // TODO: import { updateWatchPage } from "./pages/watch-page";
-  },
-  [PageType.PLAYLIST]: async (_signal: AbortSignal) => {
-    // TODO: import { updatePlaylistPage } from "./pages/playlist-page";
-  },
-  [PageType.HOME]: async (_signal: AbortSignal) => {
-    // TODO: import { updateHomePage } from "./pages/home-page";
-  },
+  [PageType.WATCH]: updateWatchPlaylistPage,
+  [PageType.PLAYLIST]: updatePlaylistPage,
+  [PageType.HOME]: updateHomePage
 };
 
 // --- Page Update Orchestration ---
@@ -306,7 +335,9 @@ const PAGE_HANDLERS: Record<PageType, PageHandler> = {
  */
 async function handleFullPageUpdate(pageType: PageType): Promise<void> {
   try {
+    console.log("handle full page update, PAGE: ", pageType);
     const signal = lifecycle.start();
+    lifecycle.onCleanup(cleanupContentUI);
 
     // Load course data for watch/playlist pages
     if (
@@ -318,12 +349,13 @@ async function handleFullPageUpdate(pageType: PageType): Promise<void> {
 
     // Focus mode applies to watch page only
     if (pageType === PageType.WATCH) {
-      // TODO: toggleFocusModeUI(state.focusMode);
+      toggleFocusModeUI(state.focusMode);
     }
 
     // Dispatch to page handler
     const handler = PAGE_HANDLERS[pageType];
     if (handler) {
+      console.log("Calling handler: ", pageType);
       await handler(signal);
     }
   } catch (err) {
@@ -344,14 +376,7 @@ async function handlePartialUpdate(): Promise<void> {
 
     const signal = lifecycle.restart();
 
-    // TODO: removeVideoCheckboxes();
-    // TODO: await renderWPVideoCheckboxes({ signal });
-    // TODO: await renderVideoCourseMatches({ signal });
-    // TODO: await renderVideoWatchedButton({ signal });
-
-    state.lastWatchedVideoId = getVideoId(window.location.href);
-    state.lastInteractedAt = Date.now();
-    saveCourseState();
+    await updateWatchPlaylistPartial(signal);
   } catch (err) {
     if (!isAbortError(err)) {
       console.error("[TMC] Error during partial update:", err);
@@ -372,9 +397,13 @@ async function handleRefreshUI(): Promise<void> {
       await loadCourseData(state.playlistId, signal);
     }
 
-    // TODO: dispatch to page-specific refresh handler
-    // if (state.currentPage === PageType.WATCH) refreshWatchPageUI(signal);
-    // if (state.currentPage === PageType.PLAYLIST) refreshPlaylistPageUI(signal);
+    if (state.currentPage === PageType.WATCH) {
+      await refreshWatchPageUI(signal);
+    } else if (state.currentPage === PageType.PLAYLIST) {
+      await refreshPlaylistPageUI(signal);
+    } else if (state.currentPage === PageType.HOME) {
+      await updateHomeCoursesContent(signal);
+    }
   } catch (err) {
     if (!isAbortError(err)) {
       console.error("[TMC] Error during UI refresh:", err);
@@ -384,7 +413,32 @@ async function handleRefreshUI(): Promise<void> {
 
 /** Renders video-level features on standalone video pages. */
 function handleStandaloneVideo(): void {
-  // TODO: renderVideoCourseMatches();
-  // TODO: renderVideoWatchedButton();
+  console.log("handleStandaloneVideo function called");
+  const signal = lifecycle.restart();
+  updateWatchStandalonePage(signal).catch((err) => {
+    if (!isAbortError(err)) {
+      console.error("[TMC] Error rendering standalone video UI:", err);
+    }
+  });
 }
 
+function handleHomeStorageChange(): void {
+  const signal = lifecycle.restart();
+  updateHomeCoursesContent(signal).catch((err) => {
+    if (!isAbortError(err)) {
+      console.error("[TMC] Error refreshing home courses:", err);
+    }
+  });
+}
+
+function cleanupContentUI(): void {
+  removeStartCourseButtons();
+  removeVideoCheckboxes();
+  removeProgressDiv();
+  removeHomeCoursesSection();
+  removeVideoCourseList();
+  removeVideoWatchedButton();
+  removeCommentsToggleButton();
+  cleanupPlaylistPage();
+  document.body.classList.remove("tmc-focus-mode");
+}

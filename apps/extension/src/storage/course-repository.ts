@@ -1,12 +1,13 @@
 import type {
   CourseData,
   CourseEntry,
-  MatchedCourse,
   ExportData,
   ImportResult,
-  StorageData,
+  MatchedCourse,
+  StorageData
 } from "@repo/core/types";
-import { PREFERENCE_KEYS, EXPORT_VERSION } from "@repo/core/constants";
+import { EXPORT_VERSION, PREFERENCE_KEYS } from "@repo/core/constants";
+
 import type { StorageAdapter } from "./storage";
 import { storage as defaultStorage } from "./storage";
 
@@ -86,9 +87,7 @@ export class CourseRepository {
    * Finds all tracked courses that contain a specific video.
    * Used to show "Included in these courses" panel and for cross-course sync.
    */
-  async getCoursesContainingVideo(
-    videoId: string,
-  ): Promise<MatchedCourse[]> {
+  async getCoursesContainingVideo(videoId: string): Promise<MatchedCourse[]> {
     if (!videoId) return [];
 
     const data = await this.storage.get(null);
@@ -105,7 +104,7 @@ export class CourseRepository {
         matches.push({
           playlistId: key,
           courseName: course.courseName,
-          isWatched: course.videoWatchStatus[videoId] ?? false,
+          isWatched: course.videoWatchStatus[videoId] ?? false
         });
       }
     }
@@ -131,7 +130,7 @@ export class CourseRepository {
     return {
       version: EXPORT_VERSION,
       exportedAt: new Date().toISOString(),
-      data,
+      data
     };
   }
 
@@ -144,7 +143,7 @@ export class CourseRepository {
     const existingData = await this.storage.get(null);
 
     const importEntries = Object.entries(importData).filter(
-      ([key]) => !PREFERENCE_KEYS.has(key),
+      ([key]) => !PREFERENCE_KEYS.has(key)
     );
 
     let importedCount = 0;
@@ -193,14 +192,14 @@ export class CourseRepository {
         if (key === "focusMode") {
           events.push({
             type: "focusMode",
-            value: (change.newValue as boolean) ?? false,
+            value: (change.newValue as boolean) ?? false
           });
         } else if (!PREFERENCE_KEYS.has(key)) {
           events.push({
             type: "course",
             playlistId: key,
             oldValue: change.oldValue as CourseData | undefined,
-            newValue: change.newValue as CourseData | undefined,
+            newValue: change.newValue as CourseData | undefined
           });
         }
       }
