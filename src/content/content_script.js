@@ -514,7 +514,6 @@ async function renderPPStartCourseBtn({ signal }) {
 
     if (signal.aborted) throw createAbortError();
     startCourseBtn.addEventListener("click", async () => {
-
         // prevent multiple clicks
         if (startCourseBtn.dataset.processing) return;
         startCourseBtn.dataset.processing = "true";
@@ -733,6 +732,10 @@ async function synchronizeVideoStatus(videoId, isChecked, videoDuration) {
     }
 
     saveToStorage(updatedCourses);
+
+    // consistency tracking: a video counts towards today as soon as it is ticked off
+    if (isChecked) recordVideoWatched(videoId);
+
     const coursesAffected = Object.keys(updatedCourses).length;
     const syncMessage =
         coursesAffected > 1 ? `Progress updated in ${coursesAffected} courses` : "Progress updated";
@@ -1884,6 +1887,8 @@ function initializeInvestedTimeTracker({ signal }) {
                 investedTimeEl.textContent = `${state.investedTime.hours}h ${state.investedTime.minutes}m`;
             }
             saveCourseState();
+            // consistency tracking: only active watching time reaches this tick
+            recordWatchTime(30);
         }, 30000);
     }
 
