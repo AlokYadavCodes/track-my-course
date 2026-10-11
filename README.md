@@ -44,6 +44,7 @@ _Ready to use TrackMyCourse?_ [Install now](https://chromewebstore.google.com/de
 - 📊 **Visual Progress Bar** – Instantly see how much of a playlist you’ve completed.
 - ✅ **Video Checkmarks** – Mark videos as finished to keep your learning on track.
 - ⏱️ **Duration Tracking** – Know your watched and total time to plan your study sessions better.
+- 🔥 **Consistency Heatmap** – Open the extension to see a LeetCode-style calendar of your study days in shades of YouTube red, plus your current and best streak.
 - 🔄 **Dynamic Playlist Scanning** – Automatically detects videos in the playlist.
 - 💾 **Saved Locally** – Your progress stays saved in your browser, no sign-up needed.
 - 📦 **Import / Export** – Back up your data as a JSON file and restore it anytime, even across browsers.
@@ -64,6 +65,16 @@ _All features appear seamlessly inside YouTube’s interface._
 
 Once started, the progress bar and checkboxes will automatically appear for that playlist.
 
+### Consistency Heatmap
+
+Click the extension icon and switch to the **Consistency** tab to see how regularly you study:
+
+- **Heatmap** – every day of the last 6 months (switch to **1Y** for a full year) as a square shaded in shades of YouTube red. Hover a square to see the videos and time logged that day.
+- **Streaks** – your current streak and your best streak, counted in consecutive active days.
+- **Active days** – the total number of days you studied.
+
+A day lights up as soon as you tick off a video, and keeps filling in while you watch a tracked course. Shades are based on the busier of the two: videos watched that day (1 / 2–3 / 4–6 / 7+) or time invested (5 min / 30 min / 1 h / 2 h+). Your history stays in your browser and is included in Import / Export backups.
+
 ### Backup & Restore (Import / Export)
 
 You can back up all your tracked courses and restore them later — useful when switching browsers, devices, or reinstalling the extension.
@@ -72,7 +83,7 @@ You can back up all your tracked courses and restore them later — useful when 
 2. **Export Data** — Downloads a `.json` backup file containing all your courses and progress.
 3. **Import Data** — Opens a dedicated import page where you can drag-and-drop (or browse for) a previously exported `.json` file.
 
-During import, the extension shows a preview of the courses in the backup. Only **new** courses are added — your existing courses and progress are never modified or deleted.
+During import, the extension shows a preview of the courses in the backup. Only **new** courses are added — your existing courses and progress are never modified or deleted. The consistency history in the backup is merged day by day, keeping whichever side recorded more that day.
 
 ---
 

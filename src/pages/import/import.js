@@ -103,6 +103,11 @@ async function showPreview(fileName, importData) {
     }
 
     const isMixed = newCount > 0 && existsCount > 0;
+    const historyDays = countImportedActivityDays(importData);
+    const historyNote =
+        historyDays > 0
+            ? `${historyDays} day${historyDays > 1 ? "s" : ""} of consistency history will be merged.`
+            : "";
 
     // Second pass: build the course list
     courseListEl.innerHTML = "";
@@ -129,27 +134,45 @@ async function showPreview(fileName, importData) {
         courseListEl.append(li);
     }
 
-    if (importCourses.length === 0) {
+    if (importCourses.length === 0 && historyDays === 0) {
         previewSummaryEl.textContent = "No courses found in this backup.";
         importNoteEl.textContent = "";
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Nothing to Import";
-    } else if (newCount === 0) {
+    } else if (newCount === 0 && historyDays === 0) {
         previewSummaryEl.textContent = `${existsCount} course${existsCount > 1 ? "s" : ""} found, all already tracked.`;
         importNoteEl.textContent = "No new courses to add from this backup.";
         confirmBtn.disabled = true;
         confirmBtn.textContent = "Nothing to Import";
+    } else if (newCount === 0) {
+        // nothing new to track, but the backup still has watch history worth keeping
+        previewSummaryEl.textContent = `${existsCount} course${existsCount > 1 ? "s" : ""} found, all already tracked.`;
+        importNoteEl.textContent = historyNote;
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = "Import Consistency History";
     } else {
         previewSummaryEl.textContent =
             existsCount > 0
                 ? `${importCourses.length} courses found: ${newCount} to import, ${existsCount} already tracked.`
                 : `${newCount} course${newCount > 1 ? "s" : ""} found in this backup.`;
-        importNoteEl.textContent = "Already tracked courses won't be modified or deleted.";
+        importNoteEl.textContent = [
+            "Already tracked courses won't be modified or deleted.",
+            historyNote,
+        ]
+            .filter(Boolean)
+            .join(" ");
         confirmBtn.disabled = false;
         confirmBtn.textContent = `Import ${newCount} Course${newCount > 1 ? "s" : ""}`;
     }
 
     showStep(stepPreview);
+}
+
+// the activity log travels inside the same backup file, under its own key
+function countImportedActivityDays(importData) {
+    const log = importData?.[ACTIVITY_STORAGE_KEY];
+    if (!log || typeof log !== "object") return 0;
+    return Object.keys(log).filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(key)).length;
 }
 
 // --- import ---
@@ -181,9 +204,21 @@ confirmBtn.addEventListener("click", async () => {
             await saveToStorage(dataToSave);
         }
 
+        // consistency history is additive: the busier value wins for each day
+        const mergedDays = await mergeActivityLog(pendingImportData[ACTIVITY_STORAGE_KEY]);
+
         resultIconEl.className = "result-icon success-icon";
         resultIconEl.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>`;
-        resultMessageEl.textContent = `Imported ${newCount} course${newCount > 1 ? "s" : ""} successfully!`;
+        resultMessageEl.textContent = [
+            newCount > 0
+                ? `Imported ${newCount} course${newCount > 1 ? "s" : ""} successfully!`
+                : "Nothing new to add.",
+            mergedDays > 0
+                ? `Consistency history merged for ${mergedDays} day${mergedDays > 1 ? "s" : ""}.`
+                : "",
+        ]
+            .filter(Boolean)
+            .join(" ");
         showStep(stepResult);
     } catch {
         showError("Something went wrong during import. Please try again.");

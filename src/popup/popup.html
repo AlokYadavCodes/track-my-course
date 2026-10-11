@@ -96,52 +96,140 @@
                     </div>
                 </div>
             </header>
+            <nav class="view-tabs" role="tablist">
+                <button
+                    class="view-tab is-active"
+                    id="tab-courses"
+                    data-view="courses"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="view-courses"
+                >
+                    Courses
+                </button>
+                <button
+                    class="view-tab"
+                    id="tab-consistency"
+                    data-view="consistency"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="view-consistency"
+                >
+                    Consistency
+                </button>
+            </nav>
             <main>
-                <div id="welcome-message">
-                    <h2>Welcome to TrackMyCourse!</h2>
-                    <p>
-                        To get started, go to a YouTube playlist and look for the 'Start Course'
-                        button.
-                    </p>
-                </div>
-
-                <div id="course-lists-container">
-                    <div class="courses-outer-container">
-                        <div class="courses-summary in-progress-summary">
-                            <div class="summary-text">
-                                In progress
-                                <span class="in-progress-course-count course-count"></span>
-                            </div>
-                            <svg width="24" height="24" viewBox="0 0 24 24">
-                                <path
-                                    d="M18 15L12 9L6 15"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </div>
-                        <div class="in-progress-courses courses"></div>
+                <div id="view-courses" class="view-panel" data-view="courses">
+                    <div id="welcome-message">
+                        <h2>Welcome to TrackMyCourse!</h2>
+                        <p>
+                            To get started, go to a YouTube playlist and look for the 'Start Course'
+                            button.
+                        </p>
                     </div>
 
-                    <div class="courses-outer-container">
-                        <div class="courses-summary completed-summary">
-                            <div class="summary-text">
-                                Completed
-                                <span class="completed-course-count course-count"></span>
+                    <div id="course-lists-container">
+                        <div class="courses-outer-container">
+                            <div class="courses-summary in-progress-summary">
+                                <div class="summary-text">
+                                    In progress
+                                    <span class="in-progress-course-count course-count"></span>
+                                </div>
+                                <svg width="24" height="24" viewBox="0 0 24 24">
+                                    <path
+                                        d="M18 15L12 9L6 15"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
                             </div>
-                            <svg width="24" height="24" viewBox="0 0 24 24">
-                                <path
-                                    d="M6 9L12 15L18 9"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
+                            <div class="in-progress-courses courses"></div>
                         </div>
-                        <div class="completed-courses courses hide"></div>
+
+                        <div class="courses-outer-container">
+                            <div class="courses-summary completed-summary">
+                                <div class="summary-text">
+                                    Completed
+                                    <span class="completed-course-count course-count"></span>
+                                </div>
+                                <svg width="24" height="24" viewBox="0 0 24 24">
+                                    <path
+                                        d="M6 9L12 15L18 9"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                            </div>
+                            <div class="completed-courses courses hide"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-consistency" class="view-panel hidden" data-view="consistency">
+                    <div class="consistency-stats">
+                        <div class="streak-card">
+                            <span class="streak-value" id="current-streak">0</span>
+                            <span class="streak-label">day streak</span>
+                        </div>
+                        <div class="streak-card">
+                            <span class="streak-value" id="longest-streak">0</span>
+                            <span class="streak-label">best streak</span>
+                        </div>
+                        <div class="streak-card">
+                            <span class="streak-value" id="active-days">0</span>
+                            <span class="streak-label">active days</span>
+                        </div>
+                    </div>
+
+                    <div class="heatmap-card">
+                        <div class="heatmap-header">
+                            <div class="heatmap-heading">
+                                <span class="heatmap-total" id="heatmap-total"
+                                    >0 videos watched</span
+                                >
+                                <span class="heatmap-title" id="heatmap-title"
+                                    >Last 6 months of activity</span
+                                >
+                            </div>
+                            <div class="range-toggle" role="group" aria-label="Heatmap range">
+                                <button class="range-btn is-active" data-weeks="26">6M</button>
+                                <button class="range-btn" data-weeks="53">1Y</button>
+                            </div>
+                        </div>
+
+                        <div class="heatmap-scroll" id="heatmap-scroll">
+                            <div class="heatmap-inner">
+                                <div class="heatmap-body">
+                                    <div class="heatmap-weekdays" aria-hidden="true">
+                                        <span></span><span>Mon</span><span></span><span>Wed</span
+                                        ><span></span><span>Fri</span><span></span>
+                                    </div>
+                                    <div
+                                        class="heatmap-grid"
+                                        id="heatmap-grid"
+                                        role="img"
+                                        aria-label="Daily study activity"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="heatmap-legend">
+                            <span class="heatmap-legend-hint" id="heatmap-hint"></span>
+                            <span class="heatmap-legend-scale">
+                                <span>Less</span>
+                                <span class="legend-cell level-0"></span>
+                                <span class="legend-cell level-1"></span>
+                                <span class="legend-cell level-2"></span>
+                                <span class="legend-cell level-3"></span>
+                                <span class="legend-cell level-4"></span>
+                                <span>More</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </main>

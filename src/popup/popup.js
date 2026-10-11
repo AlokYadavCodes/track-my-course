@@ -22,7 +22,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const courses = getCourseEntries(storageData).map(([key, value]) => ({ ...value, id: key }));
 
     initializeFocusMode(isFocusModeEnabled);
+    initializeViewTabs();
     await renderCourses(courses);
+    await renderConsistency();
     addClickListeners();
 });
 
@@ -216,6 +218,17 @@ function addClickListeners() {
             return;
         }
 
+        // --- Heatmap range toggle ---
+        const rangeBtn = clickedEl.closest(".range-btn");
+        if (rangeBtn) {
+            const weeks = Number(rangeBtn.dataset.weeks);
+            if (weeks !== heatmapWeeks) {
+                heatmapWeeks = weeks;
+                renderConsistency();
+            }
+            return;
+        }
+
         // --- Focus mode toggle ---
         if (clickedEl.closest("#focus-mode-item")) {
             const focusModeCheckbox = document.getElementById("focus-mode-toggle");
@@ -290,7 +303,7 @@ function addClickListeners() {
 }
 
 async function handleExport() {
-    const EXPORT_VERSION = 1;
+    const EXPORT_VERSION = 2; // v2 adds the activityLog payload
     const storageData = await getFromStorage(null);
 
     const exportData = {
@@ -308,4 +321,153 @@ async function handleExport() {
     });
 
     document.getElementById("kebab-dropdown").classList.remove("open");
+}
+
+// --- consistency view ---
+// daily watch activity is logged by the content script (see recordVideoWatched / recordWatchTime
+// in shared/utils.js) and drawn here as a GitHub/LeetCode style heatmap in shades of YouTube red
+
+let heatmapWeeks = HEATMAP_WEEKS.HALF_YEAR;
+
+const EMPTY_ACTIVITY_MESSAGE = "No activity yet";
+
+/**
+ * Switches between the Courses and Consistency panels. Both panels are rendered up front,
+ * so this only moves the `hidden` class around.
+ */
+function initializeViewTabs() {
+    const tabs = Array.from(document.querySelectorAll(".view-tab"));
+    const panels = Array.from(document.querySelectorAll(".view-panel"));
+
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            tabs.forEach((otherTab) => {
+                const isActive = otherTab === tab;
+                otherTab.classList.toggle("is-active", isActive);
+                otherTab.setAttribute("aria-selected", String(isActive));
+            });
+
+            panels.forEach((panel) => {
+                panel.classList.toggle("hidden", panel.dataset.view !== tab.dataset.view);
+            });
+        });
+    });
+}
+
+async function renderConsistency() {
+    const log = await getActivityLog();
+    const stats = getActivityStats(log);
+
+    setStatValue("current-streak", stats.currentStreak, stats.currentStreak === 0);
+    setStatValue("longest-streak", stats.longestStreak, stats.longestStreak === 0);
+    setStatValue("active-days", stats.activeDays, stats.activeDays === 0);
+
+    document.getElementById("heatmap-total").textContent = describeTotals(stats);
+    document.getElementById("heatmap-title").textContent =
+        heatmapWeeks === HEATMAP_WEEKS.YEAR
+            ? "Every day of the last 12 months"
+            : "Every day of the last 6 months";
+    document.getElementById("heatmap-hint").textContent = describeToday(stats);
+    document
+        .getElementById("heatmap-grid")
+        ?.setAttribute("aria-label", `Daily study activity: ${describeTotals(stats)}`);
+
+    document.querySelectorAll(".range-btn").forEach((btn) => {
+        btn.classList.toggle("is-active", Number(btn.dataset.weeks) === heatmapWeeks);
+    });
+
+    renderHeatmap(buildActivityWeeks(log, { weeks: heatmapWeeks }));
+}
+
+function setStatValue(id, value, isCold) {
+    const valueEl = document.getElementById(id);
+    if (!valueEl) return;
+    valueEl.textContent = value;
+    valueEl.closest(".streak-card")?.classList.toggle("is-cold", Boolean(isCold));
+}
+
+function describeTotals(stats) {
+    if (stats.totalVideos === 0 && stats.totalSeconds === 0) return EMPTY_ACTIVITY_MESSAGE;
+
+    const videos = `${stats.totalVideos} video${stats.totalVideos === 1 ? "" : "s"}`;
+    return `${videos} watched · ${formatActivityDuration(stats.totalSeconds)} invested`;
+}
+
+function describeToday(stats) {
+    if (stats.todayVideos === 0 && stats.todaySeconds === 0) {
+        return stats.activeDays === 0
+            ? "Tick off a video to start your streak."
+            : "Nothing logged today yet — keep the streak alive.";
+    }
+
+    const parts = [];
+    if (stats.todayVideos > 0) {
+        parts.push(`${stats.todayVideos} video${stats.todayVideos === 1 ? "" : "s"}`);
+    }
+    if (stats.todaySeconds > 0) parts.push(formatActivityDuration(stats.todaySeconds));
+
+    return `Today: ${parts.join(" · ")}`;
+}
+
+function describeDay(day) {
+    const date = day.date.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+
+    if (day.videos === 0 && day.seconds === 0) return `No activity on ${date}`;
+
+    const parts = [];
+    if (day.videos > 0) parts.push(`${day.videos} video${day.videos === 1 ? "" : "s"} watched`);
+    if (day.seconds > 0) parts.push(formatActivityDuration(day.seconds));
+
+    return `${parts.join(" · ")} on ${date}`;
+}
+
+/**
+ * @param {Array<Array<{key: string, date: Date, level: number, isToday: boolean, isFuture: boolean}>>} weeks
+ */
+function renderHeatmap(weeks) {
+    const gridEl = document.getElementById("heatmap-grid");
+    const scrollEl = document.getElementById("heatmap-scroll");
+    if (!gridEl) return;
+
+    gridEl.innerHTML = "";
+
+    weeks.forEach((days) => {
+        const weekEl = document.createElement("div");
+        weekEl.className = "heatmap-week";
+
+        days.forEach((day) => {
+            const cell = document.createElement("span");
+            cell.className = `heatmap-cell level-${day.level}`;
+            if (day.isFuture) {
+                // slots left in the current week — keep them invisible but occupying space
+                cell.classList.add("is-empty");
+                cell.setAttribute("aria-hidden", "true");
+            } else {
+                cell.title = describeDay(day);
+            }
+            if (day.isToday) cell.classList.add("is-today");
+            weekEl.append(cell);
+        });
+
+        // a month label sits above the column holding that month's first day
+        const firstOfMonth = days.find((day) => !day.isFuture && day.date.getDate() === 1);
+        if (firstOfMonth) {
+            const label = document.createElement("span");
+            label.className = "heatmap-month";
+            label.textContent = firstOfMonth.date.toLocaleDateString(undefined, { month: "short" });
+            weekEl.append(label);
+        }
+
+        gridEl.append(weekEl);
+    });
+
+    // the year view is wider than the popup, so keep the most recent weeks in sight
+    if (scrollEl) {
+        scrollEl.scrollLeft = heatmapWeeks === HEATMAP_WEEKS.YEAR ? scrollEl.scrollWidth : 0;
+    }
 }
