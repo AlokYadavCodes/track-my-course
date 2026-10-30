@@ -92,34 +92,29 @@ Follow these steps to set up the project on your local machine.
     ```bash
     git clone https://github.com/AlokYadavCodes/track-my-course.git
     ```
-2.  **Install dependencies:**
+2.  **Navigate to the project directory and install dependencies:**
     ```bash
+    cd track-my-course
     npm install
     ```
-3.  **Open Chrome Extensions:** Navigate to `chrome://extensions/` in your browser.
-4.  **Enable Developer Mode:** Ensure the **Developer mode** toggle is switched on.
-5.  **Load the extension:** Click **"Load unpacked"** and select the `track-my-course` folder you cloned.
+3.  **Navigate to the scripts folder and build the extension:**
+    ```bash
+    cd scripts
+    npm run build
+    ``` 
+    Note: You can also target specific builds via
+    ```bash
+     npm run build:chrome or 
+     npm run build:firefox.
+    ```
+    The script will copy `icons/` and `src/` into `dist/<browser>/` and include the appropriate manifest (`manifest.chrome.json` or `manifest.firefox.json`) for each browser.
+
+4.  **Open Chrome Extensions:** Navigate to `chrome://extensions/` in your browser.
+5.  **Enable Developer Mode:** Ensure the **Developer mode** toggle is switched on.
+6.  **Load the extension:** Click **Load unpacked** and select the specific target browser folder inside dist/ (e.g., track-my-course/dist/chrome).
 
 > **Note:** Changes to the source code will only reflect after you reload the extension on the `chrome://extensions/` page.
 
-### Building browser bundles
-
-There is a script `(scripts/build.js)` that generates the Chrome and Firefox bundles into the `dist/` folder.
-
-Run the build commands:
-
-```bash
-# build Chrome bundle
-npm run build:chrome
-
-# build Firefox bundle
-npm run build:firefox
-
-# build both Chrome and Firefox
-npm run build
-```
-
-The script will copy `icons/` and `src/` into `dist/<browser>/` and include the appropriate manifest (`manifest.chrome.json` or `manifest.firefox.json`) for each browser.
 
 ### Project Structure
 
